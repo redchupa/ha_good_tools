@@ -1,26 +1,134 @@
-export type ToolCategory = 'general' | 'developer' | 'feed';
+export type ToolCategory = 'ha' | 'general' | 'developer' | 'feed';
 
 export interface ToolMeta {
   id: string;
   name: string;
+  nameEn?: string;
   shortDesc: string;
+  shortDescEn?: string;
   category: ToolCategory;
   icon: string;
   keywords: string[];
-  badge?: 'network' | 'https';
+  badge?: 'network' | 'https' | 'lan';
 }
 
-export const CATEGORY_LABELS: Record<ToolCategory, { label: string; desc: string }> = {
-  general: { label: '일반 도구', desc: '일상·텍스트·이미지·미디어·생활 유틸리티' },
-  developer: { label: '개발자 도구', desc: '코드·인코딩·암호화·색상·네트워크 개발 유틸리티' },
-  feed: { label: '웹 / 피드', desc: 'RSS/Atom 피드 및 웹 게시글 리더' },
+export const CATEGORY_LABELS: Record<ToolCategory, { label: string; labelEn: string; desc: string }> = {
+  ha: { label: 'Home Assistant', labelEn: 'Home Assistant', desc: 'HA 자동화·YAML·Jinja2·LAN·가족 공유 도구' },
+  general: { label: '일반 도구', labelEn: 'General Tools', desc: '일상·텍스트·PDF·이미지·미디어 유틸리티' },
+  developer: { label: '개발자 도구', labelEn: 'Developer Tools', desc: '코드·인코딩·암호화·색상·네트워크 개발 유틸리티' },
+  feed: { label: '웹 / 피드', labelEn: 'Web & Feeds', desc: 'RSS/Atom 피드 및 웹 게시글 리더' },
 };
 
 export const TOOLS: ToolMeta[] = [
-  // 일반 도구 (19종)
+  // Home Assistant 전용 도구
+  {
+    id: 'shared-clipboard',
+    name: '가족 공유 클립보드',
+    nameEn: 'Shared Clipboard',
+    shortDesc: 'PC·모바일 HA 앱 간 링크와 메모를 즉시 공유 (/data 영속 저장)',
+    shortDescEn: 'Share links and notes across PC & mobile HA Companion App',
+    category: 'ha',
+    icon: 'ClipboardList',
+    keywords: ['클립보드', '메모', '공유', 'clipboard', 'note', '가족', 'ha'],
+    badge: 'network',
+  },
+  {
+    id: 'ha-yaml-json',
+    name: 'HA YAML ↔ JSON 검사기',
+    nameEn: 'HA YAML ↔ JSON',
+    shortDesc: 'Home Assistant YAML 구문 검증 및 JSON 양방향 변환',
+    shortDescEn: 'Validate HA YAML and convert between YAML & JSON',
+    category: 'ha',
+    icon: 'FileJson',
+    keywords: ['yaml', 'json', 'ha', 'homeassistant', '자동화', '검증'],
+  },
+  {
+    id: 'ha-cron',
+    name: 'Cron & 스케줄 시뮬레이터',
+    nameEn: 'Cron & Schedule',
+    shortDesc: '크론 표현식 한국어 해석, 다음 5회 실행 시각 예측, HA time_pattern 생성',
+    shortDescEn: 'Parse cron expressions, preview next 5 runs & HA time_pattern',
+    category: 'ha',
+    icon: 'Clock',
+    keywords: ['cron', '크론', '스케줄', '예약', 'time_pattern', 'ha'],
+  },
+  {
+    id: 'ha-jinja',
+    name: 'HA Jinja2 템플릿 모음',
+    nameEn: 'HA Jinja2 Snippets',
+    shortDesc: '자주 쓰는 Home Assistant Jinja2 상태·시간·영역 템플릿 원클릭 복사',
+    shortDescEn: 'Ready-to-use Home Assistant Jinja2 template snippets',
+    category: 'ha',
+    icon: 'Braces',
+    keywords: ['jinja', 'jinja2', '템플릿', 'template', 'ha', '스니펫'],
+  },
+  {
+    id: 'lan-wol',
+    name: 'LAN 포트 점검 & WoL',
+    nameEn: 'LAN Port & Wake-on-LAN',
+    shortDesc: '내부 네트워크 기기 TCP 포트 연결 점검 및 Wake-on-LAN 매직패킷 전송',
+    shortDescEn: 'Check LAN TCP ports and send Wake-on-LAN magic packets',
+    category: 'ha',
+    icon: 'Power',
+    keywords: ['wol', 'wakeonlan', '포트', 'port', 'lan', '네트워크', 'pc켜기'],
+    badge: 'lan',
+  },
+
+  // 일반 도구
+  {
+    id: 'pdf-tools',
+    name: 'PDF 병합 / 분할 / 변환',
+    nameEn: 'PDF Merge & Split',
+    shortDesc: '브라우저 로컬에서 PDF 합치기, 페이지 추출, 이미지→PDF 변환',
+    shortDescEn: 'Merge PDFs, extract pages, and convert images to PDF locally',
+    category: 'general',
+    icon: 'FileText',
+    keywords: ['pdf', '병합', '분할', '합치기', '문서', '이미지'],
+  },
+  {
+    id: 'image-studio',
+    name: '이미지 변환 / 압축 / EXIF 제거',
+    nameEn: 'Image Resizer & EXIF Strip',
+    shortDesc: '이미지 크기 조절, PNG/JPG/WebP 변환, 용량 압축 및 위치정보(EXIF) 제거',
+    shortDescEn: 'Resize, compress, convert PNG/JPG/WebP and strip EXIF metadata',
+    category: 'general',
+    icon: 'Sliders',
+    keywords: ['이미지', '리사이즈', '압축', 'webp', 'exif', '사진', '변환'],
+  },
+  {
+    id: 'unit-date-calc',
+    name: '단위 · 평수 · 날짜 계산기',
+    nameEn: 'Unit & Date Calculator',
+    shortDesc: '평↔㎡·온도·길이·무게·용량 단위 변환 및 D-Day·만나이 계산',
+    shortDescEn: 'Convert pyeong/area/temp/length/weight and calculate D-Day/age',
+    category: 'general',
+    icon: 'Calculator',
+    keywords: ['단위', '평수', '제곱미터', '계산기', 'dday', '만나이', '날짜'],
+  },
+  {
+    id: 'regex-tester',
+    name: '정규표현식 (Regex) 테스터',
+    nameEn: 'Regex Tester',
+    shortDesc: '실시간 정규식 매칭 하이라이트, 치환, 한국어 패턴 프리셋 제공',
+    shortDescEn: 'Live regex match highlighter, replacer, and common presets',
+    category: 'general',
+    icon: 'Regex',
+    keywords: ['정규표현식', '정규식', 'regex', '패턴', '치환', '마스킹'],
+  },
+  {
+    id: 'csv-json',
+    name: 'CSV ↔ JSON & 테이블 뷰어',
+    nameEn: 'CSV ↔ JSON Table',
+    shortDesc: 'CSV/TSV와 JSON 상호 변환 및 검색 가능한 데이터 표 미리보기',
+    shortDescEn: 'Convert CSV/TSV to JSON with interactive table preview',
+    category: 'general',
+    icon: 'Table',
+    keywords: ['csv', 'tsv', 'excel', 'json', '테이블', '표', '변환'],
+  },
   {
     id: 'char-map',
     name: '특수문자표',
+    nameEn: 'Special Characters',
     shortDesc: '기호·이모지·화살표·수학·한글 자모 검색 및 원클릭 복사',
     category: 'general',
     icon: 'Hash',
@@ -29,6 +137,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'ascii-art',
     name: '아스키아트 생성',
+    nameEn: 'ASCII Art Generator',
     shortDesc: '텍스트 배너 & 이미지를 아스키 아트로 변환',
     category: 'general',
     icon: 'Type',
@@ -37,6 +146,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'gif-gen',
     name: 'GIF 생성기',
+    nameEn: 'Animated GIF Maker',
     shortDesc: '여러 장의 이미지를 합쳐 움직이는 애니메이션 GIF 제작',
     category: 'general',
     icon: 'Images',
@@ -45,6 +155,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'barcode-gen',
     name: '바코드 & QR 생성기',
+    nameEn: 'Barcode & QR Generator',
     shortDesc: 'CODE128·EAN13·UPC 바코드 및 URL/Wi-Fi QR코드 생성',
     category: 'general',
     icon: 'QrCode',
@@ -53,6 +164,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'web-editor',
     name: '웹 에디터',
+    nameEn: 'Markdown Web Editor',
     shortDesc: 'Markdown & HTML 실시간 분할 미리보기 및 내보내기',
     category: 'general',
     icon: 'FileEdit',
@@ -61,6 +173,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'subtitle-conv',
     name: '자막 변환기 (SMI↔SRT)',
+    nameEn: 'Subtitle Converter',
     shortDesc: 'SMI·SRT·VTT 자막 상호 변환, 인코딩 자동 감지, 싱크 조절',
     category: 'general',
     icon: 'Film',
@@ -69,6 +182,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'char-counter',
     name: '글자수 세기',
+    nameEn: 'Character Counter',
     shortDesc: '공백 포함/제외 글자수, 단어, 줄, 바이트(UTF-8/EUC-KR) 실시간 계산',
     category: 'general',
     icon: 'AlignLeft',
@@ -77,6 +191,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'eng-kor',
     name: '한영타 변환기',
+    nameEn: 'Eng ↔ Kor Typing',
     shortDesc: '영타로 잘못 친 한글(dkssud→안녕) 및 한글→영타 양방향 변환',
     category: 'general',
     icon: 'Languages',
@@ -85,6 +200,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'magic-eye',
     name: '매직아이 생성기',
+    nameEn: 'Magic Eye Generator',
     shortDesc: '텍스트·3D 도형·깊이맵으로 오토스테레오그램 이미지 생성',
     category: 'general',
     icon: 'Eye',
@@ -93,6 +209,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'tts',
     name: '문자 음성 변환 (TTS)',
+    nameEn: 'Text to Speech',
     shortDesc: '텍스트를 브라우저 음성 합성과 속도/피치 조절로 읽어주기',
     category: 'general',
     icon: 'Volume2',
@@ -101,6 +218,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'eml-viewer',
     name: 'EML 뷰어',
+    nameEn: 'EML Email Viewer',
     shortDesc: '.eml 이메일 파일 헤더·본문(HTML/텍스트)·첨부파일 안전 조회',
     category: 'general',
     icon: 'Mail',
@@ -109,6 +227,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'long-url',
     name: '원주소 변환기',
+    nameEn: 'URL Unshortener',
     shortDesc: '단축 URL(bit.ly 등)의 리다이렉트 체인과 최종 목적지 안전 추적',
     category: 'general',
     icon: 'Link2',
@@ -118,6 +237,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'ip-info',
     name: 'IP / 네트워크 조회',
+    nameEn: 'IP & DNS Lookup',
     shortDesc: '공인 IP·위치·ISP 조회, DNS 레코드 조회, CIDR 서브넷 계산기',
     category: 'general',
     icon: 'Globe',
@@ -127,6 +247,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'lotto-gen',
     name: '로또 번호 생성기',
+    nameEn: 'Lotto 6/45 Generator',
     shortDesc: '고정수/제외수 설정, 다중 게임 생성, 홀짝·합계 통계 분석',
     category: 'general',
     icon: 'Dices',
@@ -135,6 +256,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'flashlight',
     name: '화면 손전등',
+    nameEn: 'Screen Flashlight',
     shortDesc: '전체화면 조명, 색온도/색상 프리셋, SOS/스트로브, 화면 꺼짐 방지',
     category: 'general',
     icon: 'Lightbulb',
@@ -143,15 +265,17 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'postcode',
     name: '우편번호 조회',
+    nameEn: 'Korea Postcode Lookup',
     shortDesc: '대한민국 도로명주소·지번주소·5자리 우편번호 검색 및 복사',
     category: 'general',
     icon: 'MapPin',
-    keywords: ['우편번호', '주소', '도로명', 'postcode', '다음'],
+    keywords: ['우편번호', '주소', '도로명', 'postcode', '카카오'],
     badge: 'network',
   },
   {
     id: 'barcode-scanner',
     name: '바코드 & QR 스캐너',
+    nameEn: 'Barcode & QR Scanner',
     shortDesc: '이미지 파일 업로드/붙여넣기 및 카메라 실시간 바코드·QR 스캔',
     category: 'general',
     icon: 'ScanLine',
@@ -160,6 +284,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'file-checksum',
     name: '파일 체크섬 조회',
+    nameEn: 'File Checksum',
     shortDesc: '파일·텍스트 MD5, SHA-1, SHA-256, SHA-512, CRC32 계산 및 무결성 검증',
     category: 'general',
     icon: 'FileCheck',
@@ -168,6 +293,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'stt',
     name: '음성 문자 변환 (STT)',
+    nameEn: 'Speech to Text',
     shortDesc: '마이크 음성을 실시간 텍스트로 받아쓰기 (HTTPS 환경 지원)',
     category: 'general',
     icon: 'Mic',
@@ -175,10 +301,48 @@ export const TOOLS: ToolMeta[] = [
     badge: 'https',
   },
 
-  // 개발자 도구 (12종)
+  // 개발자 도구
+  {
+    id: 'timestamp-conv',
+    name: 'Unix Timestamp 변환기',
+    nameEn: 'Unix Timestamp',
+    shortDesc: 'Unix 초/밀리초 ↔ 한국시간(KST)·UTC·ISO 8601 양방향 변환',
+    category: 'developer',
+    icon: 'Timer',
+    keywords: ['timestamp', 'unix', 'epoch', '시간', 'kst', 'iso'],
+  },
+  {
+    id: 'json-explorer',
+    name: 'JSON 트리 & 경로 탐색기',
+    nameEn: 'JSON Tree Explorer',
+    shortDesc: 'JSON 접기/펼치기 트리 탐색, 키/값 검색 및 JSONPath 원클릭 복사',
+    category: 'developer',
+    icon: 'FolderTree',
+    keywords: ['json', 'tree', 'jsonpath', 'jq', '트리', '탐색기'],
+  },
+  {
+    id: 'ssl-checker',
+    name: 'SSL 인증서 & 보안 헤더 진단',
+    nameEn: 'SSL & Security Headers',
+    shortDesc: '도메인 TLS 인증서 만료 D-Day, 발급자, HSTS/CSP 보안 헤더 점검',
+    category: 'developer',
+    icon: 'Lock',
+    keywords: ['ssl', 'tls', 'https', '인증서', '만료', '보안헤더', 'hsts'],
+    badge: 'network',
+  },
+  {
+    id: 'favicon-gen',
+    name: 'SVG & Favicon/아이콘 생성기',
+    nameEn: 'Favicon & Icon Pack',
+    shortDesc: '이미지/SVG로 웹 Favicon 및 HA 애드온 icon.png/logo.png 즉시 생성',
+    category: 'developer',
+    icon: 'AppWindow',
+    keywords: ['favicon', 'svg', '아이콘', 'icon', 'logo', '애드온'],
+  },
   {
     id: 'html-codes',
     name: 'HTML 코드표',
+    nameEn: 'HTML Entities',
     shortDesc: 'HTML 특수문자 엔티티 검색 표 & 실시간 Escape/Unescape',
     category: 'developer',
     icon: 'Code2',
@@ -187,6 +351,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'ascii-codes',
     name: '아스키 코드표',
+    nameEn: 'ASCII Table',
     shortDesc: '0~127 ASCII 전체 표(DEC/HEX/OCT/BIN) & 문자열↔ASCII 변환',
     category: 'developer',
     icon: 'Binary',
@@ -195,6 +360,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'color-picker',
     name: '색상표 & 팔레트',
+    nameEn: 'Color & WCAG Studio',
     shortDesc: 'HEX/RGB/HSL/CMYK 변환, WCAG 명암비 검사, Tailwind 팔레트',
     category: 'developer',
     icon: 'Palette',
@@ -203,7 +369,8 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'img-to-url',
     name: '이미지 ↔ Data URL',
-    shortDesc: '이미지를 Base64 Data URL로 변환(리사이즈 지원) 및 역변환 미리보기',
+    nameEn: 'Image ↔ Data URL',
+    shortDesc: '이미지를 Base64 Data URL로 변환 및 역변환 미리보기',
     category: 'developer',
     icon: 'Image',
     keywords: ['이미지', 'base64', 'dataurl', 'img2url', '변환'],
@@ -211,6 +378,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'code-diff',
     name: '코드 / 문서 비교',
+    nameEn: 'Code & Text Diff',
     shortDesc: '두 텍스트·코드의 차이점을 줄 단위로 비교 (Unified / Split)',
     category: 'developer',
     icon: 'GitCompare',
@@ -219,6 +387,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'code-beautify',
     name: '코드 정렬 (Beautify)',
+    nameEn: 'Code Beautifier',
     shortDesc: 'JSON, HTML, CSS, JS, SQL, XML, YAML 자동 포맷팅',
     category: 'developer',
     icon: 'Sparkles',
@@ -227,7 +396,8 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'code-minify',
     name: '코드 압축 (Minify)',
-    shortDesc: 'JSON, HTML, CSS, JS, SQL, XML 경량화 및 용량 절감률 확인',
+    nameEn: 'Code Minifier',
+    shortDesc: 'JSON, HTML, CSS, JS, SQL 경량화 및 용량 절감률 확인',
     category: 'developer',
     icon: 'Minimize2',
     keywords: ['압축', 'minify', '경량화', 'json', 'css', 'js'],
@@ -235,7 +405,8 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'encoder',
     name: '인코딩 / JWT 디코더',
-    shortDesc: 'Base64, URL, HTML, Unicode, Hex, Binary 변환 & JWT 토큰 해석',
+    nameEn: 'Encoder & JWT Decoder',
+    shortDesc: 'Base64, URL, HTML, Unicode, Hex 변환 & JWT 토큰 해석',
     category: 'developer',
     icon: 'ArrowLeftRight',
     keywords: ['인코딩', '디코딩', 'base64', 'url', 'jwt', 'unicode', 'hex'],
@@ -243,6 +414,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'uuid-gen',
     name: 'UUID / ID 생성기',
+    nameEn: 'UUID / ULID / NanoID',
     shortDesc: 'UUID v4, 시간순 UUID v7, ULID, NanoID 대량 생성',
     category: 'developer',
     icon: 'KeyRound',
@@ -251,6 +423,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'key-code',
     name: '키보드 이벤트 검사',
+    nameEn: 'Keyboard Inspector',
     shortDesc: '실시간 키 입력의 key, code, keyCode, 조합키 상태 시각화',
     category: 'developer',
     icon: 'Keyboard',
@@ -259,6 +432,7 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'html-viewer',
     name: 'HTML 소스 & 미리보기',
+    nameEn: 'HTML Source & Preview',
     shortDesc: '원격 URL의 HTML 소스·메타/OG 태그 조회 및 실시간 HTML 미리보기',
     category: 'developer',
     icon: 'FileCode',
@@ -268,20 +442,22 @@ export const TOOLS: ToolMeta[] = [
   {
     id: 'crypto-tool',
     name: '암호화 & 보안 도구',
+    nameEn: 'Crypto & Password',
     shortDesc: 'AES-256 암복호화, SHA/MD5/HMAC 해시, 안전한 비밀번호 생성기',
     category: 'developer',
     icon: 'ShieldCheck',
     keywords: ['암호화', 'aes', 'sha256', 'hmac', '비밀번호', 'crypt'],
   },
 
-  // 웹 / 피드 (1종)
+  // 웹 / 피드
   {
     id: 'rss-reader',
     name: 'RSS / 웹 게시글 뷰어',
+    nameEn: 'RSS / Atom Reader',
     shortDesc: 'CORS 없이 RSS/Atom 피드 구독·영속 저장 및 깔끔한 리더 뷰',
     category: 'feed',
     icon: 'Rss',
-    keywords: ['rss', 'atom', '피드', '뉴스', 'scrapper', '구독'],
+    keywords: ['rss', 'atom', '피드', '뉴스', '구독'],
     badge: 'network',
   },
 ];

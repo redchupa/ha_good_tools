@@ -4,10 +4,22 @@ import { Layout } from './components/Layout';
 import { ToolShell } from './components/ToolShell';
 import { HomePage } from './pages/HomePage';
 import { getToolById } from './data/tools';
-import { useTheme, useFavorites } from './hooks/usePreferences';
+import { useTheme, useSyncedPrefs } from './hooks/usePreferences';
 
 const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
-  // General Tools (19)
+  // Home Assistant Tools
+  'shared-clipboard': lazy(() => import('./tools/SharedClipboardTool')),
+  'ha-yaml-json': lazy(() => import('./tools/HaYamlJsonTool')),
+  'ha-cron': lazy(() => import('./tools/HaCronTool')),
+  'ha-jinja': lazy(() => import('./tools/HaJinjaTool')),
+  'lan-wol': lazy(() => import('./tools/LanWolTool')),
+
+  // General Tools
+  'pdf-tools': lazy(() => import('./tools/PdfTools')),
+  'image-studio': lazy(() => import('./tools/ImageStudioTool')),
+  'unit-date-calc': lazy(() => import('./tools/UnitDateCalcTool')),
+  'regex-tester': lazy(() => import('./tools/RegexTesterTool')),
+  'csv-json': lazy(() => import('./tools/CsvJsonTool')),
   'char-map': lazy(() => import('./tools/CharMapTool')),
   'ascii-art': lazy(() => import('./tools/AsciiArtTool')),
   'gif-gen': lazy(() => import('./tools/GifGenTool')),
@@ -28,7 +40,11 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
   'file-checksum': lazy(() => import('./tools/FileChecksumTool')),
   'stt': lazy(() => import('./tools/SttTool')),
 
-  // Developer Tools (12)
+  // Developer Tools
+  'timestamp-conv': lazy(() => import('./tools/TimestampConvTool')),
+  'json-explorer': lazy(() => import('./tools/JsonExplorerTool')),
+  'ssl-checker': lazy(() => import('./tools/SslCheckerTool')),
+  'favicon-gen': lazy(() => import('./tools/FaviconGenTool')),
   'html-codes': lazy(() => import('./tools/HtmlCodesTool')),
   'ascii-codes': lazy(() => import('./tools/AsciiCodesTool')),
   'color-picker': lazy(() => import('./tools/ColorPickerTool')),
@@ -42,7 +58,7 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
   'html-viewer': lazy(() => import('./tools/HtmlViewerTool')),
   'crypto-tool': lazy(() => import('./tools/CryptoTool')),
 
-  // Feed Tools (1)
+  // Feed Tools
   'rss-reader': lazy(() => import('./tools/RssReaderTool')),
 };
 
@@ -61,10 +77,7 @@ function ToolRoute({
     return (
       <div className="text-center py-20 space-y-4">
         <h2 className="text-xl font-bold">도구를 찾을 수 없습니다</h2>
-        <Link
-          to="/"
-          className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium"
-        >
+        <Link to="/" className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium">
           대시보드로 돌아가기
         </Link>
       </div>
@@ -77,13 +90,7 @@ function ToolRoute({
       isFavorite={favorites.includes(tool.id)}
       onToggleFavorite={() => toggleFavorite(tool.id)}
     >
-      <Suspense
-        fallback={
-          <div className="py-16 text-center text-sm text-slate-400 animate-pulse">
-            도구를 불러오는 중...
-          </div>
-        }
-      >
+      <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">도구를 불러오는 중...</div>}>
         <Component />
       </Suspense>
     </ToolShell>
@@ -92,14 +99,29 @@ function ToolRoute({
 
 export default function App() {
   const { theme, setTheme } = useTheme();
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang } = useSyncedPrefs();
 
   return (
-    <Layout theme={theme} setTheme={setTheme} favorites={favorites}>
+    <Layout
+      theme={theme}
+      setTheme={setTheme}
+      favorites={favorites}
+      hiddenTools={hiddenTools}
+      toggleHidden={toggleHidden}
+      lang={lang}
+      setLang={setLang}
+    >
       <Routes>
         <Route
           path="/"
-          element={<HomePage favorites={favorites} toggleFavorite={toggleFavorite} />}
+          element={
+            <HomePage
+              favorites={favorites}
+              toggleFavorite={toggleFavorite}
+              hiddenTools={hiddenTools}
+              lang={lang}
+            />
+          }
         />
         <Route
           path="/tool/:id"
@@ -107,7 +129,14 @@ export default function App() {
         />
         <Route
           path="*"
-          element={<HomePage favorites={favorites} toggleFavorite={toggleFavorite} />}
+          element={
+            <HomePage
+              favorites={favorites}
+              toggleFavorite={toggleFavorite}
+              hiddenTools={hiddenTools}
+              lang={lang}
+            />
+          }
         />
       </Routes>
     </Layout>

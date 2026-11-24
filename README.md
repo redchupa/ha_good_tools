@@ -2,18 +2,31 @@
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fredchupa%2Fha_good_tools)
 
-광고·추적 없이 Home Assistant 사이드바(Ingress)에서 바로 사용할 수 있는 **올인원 온라인 유틸리티 & 개발자 도구 모음** 앱(Add-on)입니다.
+광고·추적 없이 Home Assistant 사이드바(Ingress)에서 바로 사용할 수 있는 **올인원 온라인 유틸리티 · Home Assistant 특화 · 개발자 도구 모음** 앱(Add-on)입니다.
 
 ## 주요 특징
 
 - **Home Assistant 사이드바(Ingress) 네이티브 통합**: 별도 포트 개방이나 로그인 없이 HA 사이드바에서 바로 사용합니다.
-- **광고·추적 제로, 로컬 우선 처리**: 대부분의 도구는 외부 서버 전송 없이 브라우저 내에서 100% 로컬로 동작합니다.
-- **안전한 서버 프록시**: 단축 URL 추적, IP/DNS 조회, 원격 HTML 소스 보기, RSS 피드 리더는 SSRF 방어(사설 IP 차단)가 적용된 내장 백엔드를 통해 CORS 제약 없이 동작합니다.
-- **현대적인 UI/UX**: 다크/라이트/시스템 자동 테마, `Ctrl+K` 빠른 도구 검색, 즐겨찾기, 모바일 반응형 레이아웃을 지원합니다.
+- **PC ↔ 모바일 설정 자동 동기화**: 즐겨찾기, 도구 숨기기, 언어 설정 및 가족 공유 클립보드가 HA `/data` 볼륨에 영속 저장됩니다.
+- **광고·추적 제로, 로컬 우선 처리**: PDF 병합/분할, 이미지 압축/EXIF 제거, 파일 체크섬, EML 뷰어 등 대부분의 도구가 브라우저 내에서 100% 로컬로 동작합니다.
+- **안전한 서버 프록시 & LAN 도구**: SSRF 방어 기반 원주소 추적·IP/DNS·SSL 인증서 진단·RSS 리더와 선택적 LAN 포트 점검/Wake-on-LAN을 지원합니다.
+- **현대적인 UI/UX**: 다크/라이트/자동 테마, 한국어/English 전환, `Ctrl+K` 빠른 검색, 도구 표시/숨기기 관리, 모바일 반응형 레이아웃을 지원합니다.
 
 ## 포함된 도구
 
+### Home Assistant 전용
+- **가족 공유 클립보드** — PC·모바일 HA 앱 간 링크와 메모 즉시 공유 및 상단 고정 (`/data/clipboard.json`)
+- **HA YAML ↔ JSON 검사기** — Home Assistant YAML 구문 검증 및 JSON 양방향 변환
+- **Cron & 스케줄 시뮬레이터** — 5필드 크론 해석, 다음 5회 실행 시각 예측, HA `time_pattern` 스니펫
+- **HA Jinja2 템플릿 모음** — 조명·배터리·시간·영역 등 실전 HA 템플릿 검색 및 원클릭 복사
+- **LAN 포트 점검 & WoL** — 내부 네트워크 기기 TCP 포트 연결 점검 및 Wake-on-LAN 매직패킷 전송
+
 ### 일반 도구
+- **PDF 병합 / 분할 / 변환** — 100% 브라우저 로컬 PDF 합치기, 페이지 추출, 이미지→PDF 변환
+- **이미지 변환 / 압축 / EXIF 제거** — 크기 조절, PNG/JPG/WebP 변환, 압축 및 GPS/카메라 EXIF 자동 제거
+- **단위 · 평수 · 날짜 계산기** — 평↔㎡·온도·길이·무게 단위 변환 및 D-Day·만나이 계산
+- **정규표현식 (Regex) 테스터** — 실시간 매칭 하이라이트, 치환, 한국어 패턴 프리셋
+- **CSV ↔ JSON & 테이블 뷰어** — CSV/TSV와 JSON 상호 변환 및 검색 가능한 표 미리보기
 - **특수문자표** — 카테고리·유니코드 검색, 원클릭 복사, 최근 사용 기록
 - **아스키아트 생성** — 텍스트 배너 & 이미지→ASCII 아트 변환
 - **GIF 생성기** — 다중 이미지 순서 편집, 프레임 딜레이·크기 조절, 로컬 GIF 제작
@@ -35,6 +48,10 @@
 - **음성 문자 변환 (STT)** — 실시간 마이크 음성 받아쓰기 (HTTPS 환경 지원)
 
 ### 개발자 도구
+- **Unix Timestamp 변환기** — 초/밀리초 자동 감지, 한국시간(KST)·UTC·ISO 8601 양방향 변환
+- **JSON 트리 & 경로 탐색기** — 접기/펼치기 트리 탐색 및 노드 클릭 시 JSONPath 복사
+- **SSL 인증서 & 보안 헤더 진단** — TLS 인증서 만료 D-Day, 발급자, HSTS/CSP 보안 헤더 점검
+- **SVG & Favicon/아이콘 생성기** — 이미지/SVG로 웹 Favicon 및 HA 애드온 `icon.png` 생성
 - **HTML 코드표** — HTML 엔티티 검색 표 & 실시간 Escape
 - **아스키 코드표** — 0부터 127까지 전체 ASCII 표(DEC/HEX/OCT/BIN) & 문자열 변환
 - **색상표 & 팔레트** — HEX/RGB/HSL 변환, WCAG AA/AAA 명암비 검사, Tailwind 팔레트

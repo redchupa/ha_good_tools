@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 (2026-11-24)
+
+- **Home Assistant 전용 도구 5종 추가**: 가족 공유 클립보드(`/data/clipboard.json`), HA YAML ↔ JSON 검사기, Cron & 스케줄 시뮬레이터, HA Jinja2 템플릿 모음, LAN 포트 점검 & Wake-on-LAN(`allow_lan_tools` 옵션 추가).
+- **일상·파일·이미지 도구 5종 추가**: PDF 병합/분할/이미지→PDF(`pdf-lib` 로컬 처리), 이미지 리사이즈/포맷 변환/압축 & EXIF 제거, 단위·평수·D-Day/만나이 계산기, 정규표현식(Regex) 테스터 & 치환기, CSV/TSV ↔ JSON & 테이블 뷰어.
+- **개발자·보안 도구 4종 추가**: Unix Timestamp ↔ KST/ISO 변환기, JSON 트리 & JSONPath 탐색기, SSL 인증서 만료 D-Day & HTTP 보안 헤더 진단기, SVG & Favicon/HA 아이콘 생성기.
+- **플랫폼 & UX 업그레이드**: HA `/data/prefs.json` 기반 즐겨찾기·숨김 설정 서버 동기화, 도구 표시/숨기기 관리 모달, 한국어/English 언어 전환.
+
 ## 1.0.3 (2026-11-24)
 
 - **UI 및 문서 정리**: 고정 도구 개수 표기 제거(향후 도구 확장에 유연하게 대응), README 후원 섹션 추가 및 안내 문구 정리.

@@ -12,8 +12,10 @@ export function createApp(options = {}) {
   const dataDir = options.dataDir || process.env.DATA_DIR || path.resolve(__dirname, '../../.local_data');
   const allowNetworkTools =
     options.allowNetworkTools ?? (process.env.ALLOW_NETWORK_TOOLS !== 'false');
+  const allowLanTools =
+    options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS !== 'false');
   const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
-  const appVersion = options.appVersion || process.env.APP_VERSION || '1.0.0';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.1.0';
 
   const app = express();
   app.disable('x-powered-by');
@@ -26,7 +28,7 @@ export function createApp(options = {}) {
     next();
   });
 
-  app.use('/api', createApiRouter({ dataDir, allowNetworkTools, defaultTheme, appVersion }));
+  app.use('/api', createApiRouter({ dataDir, allowNetworkTools, allowLanTools, defaultTheme, appVersion }));
 
   // Serve static SPA assets
   if (fs.existsSync(publicDir)) {

@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import Parser from 'rss-parser';
 import * as cheerio from 'cheerio';
 import { assertSafePublicUrl } from '../utils/ssrf.mjs';
+import { sendWakeOnLan, checkTcpPort, inspectSsl } from '../utils/lan.mjs';
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024; // 2MB
 const FETCH_TIMEOUT_MS = 10000;
@@ -35,9 +36,11 @@ async function readTextLimited(response, maxBytes = MAX_RESPONSE_BYTES) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, defaultTheme = 'system', appVersion = '1.0.0' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = true, defaultTheme = 'system', appVersion = '1.1.0' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
+  const clipboardFile = path.join(dataDir, 'clipboard.json');
+  const prefsFile = path.join(dataDir, 'prefs.json');
   const rssParser = new Parser({
     timeout: FETCH_TIMEOUT_MS,
     headers: { 'User-Agent': USER_AGENT, Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' },
@@ -52,20 +55,36 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, defaultThem
     next();
   }
 
-  async function loadFeeds() {
-    try {
-      const raw = await fs.readFile(feedsFile, 'utf8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {
-      // File doesn't exist yet -> initialize defaults
+  function requireLanEnabled(req, res, next) {
+    if (!allowLanTools) {
+      return res.status(403).json({
+        error: 'LAN 도구(WoL/포트 점검)가 HA 애드온 설정(allow_lan_tools)에서 비활성화되어 있습니다.',
+      });
     }
-    return DEFAULT_FEEDS;
+    next();
+  }
+
+  async function readJsonFile(filePath, fallback) {
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+
+  async function writeJsonFile(filePath, data) {
+    await fs.mkdir(dataDir, { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  }
+
+  async function loadFeeds() {
+    const parsed = await readJsonFile(feedsFile, null);
+    return Array.isArray(parsed) ? parsed : DEFAULT_FEEDS;
   }
 
   async function saveFeeds(feeds) {
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(feedsFile, JSON.stringify(feeds, null, 2), 'utf8');
+    await writeJsonFile(feedsFile, feeds);
   }
 
   // Health & runtime config
@@ -74,6 +93,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, defaultThem
       status: 'ok',
       version: appVersion,
       allowNetworkTools,
+      allowLanTools,
       defaultTheme,
       timestamp: new Date().toISOString(),
     });
@@ -354,6 +374,111 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, defaultThem
     const filtered = feeds.filter((f) => f.id !== id);
     await saveFeeds(filtered);
     res.json({ feeds: filtered });
+  });
+
+  // 6. User Preferences Sync (/data/prefs.json)
+  router.get('/prefs', async (_req, res) => {
+    const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko' });
+    res.json({
+      favorites: Array.isArray(prefs.favorites) ? prefs.favorites : [],
+      hiddenTools: Array.isArray(prefs.hiddenTools) ? prefs.hiddenTools : [],
+      lang: prefs.lang === 'en' ? 'en' : 'ko',
+    });
+  });
+
+  router.put('/prefs', async (req, res) => {
+    const current = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko' });
+    const { favorites, hiddenTools, lang } = req.body || {};
+    const next = {
+      favorites: Array.isArray(favorites) ? favorites.filter((x) => typeof x === 'string').slice(0, 100) : current.favorites || [],
+      hiddenTools: Array.isArray(hiddenTools) ? hiddenTools.filter((x) => typeof x === 'string').slice(0, 100) : current.hiddenTools || [],
+      lang: lang === 'en' || lang === 'ko' ? lang : current.lang || 'ko',
+    };
+    await writeJsonFile(prefsFile, next);
+    res.json(next);
+  });
+
+  // 7. Shared Family Clipboard (/data/clipboard.json)
+  router.get('/clipboard', async (_req, res) => {
+    const items = await readJsonFile(clipboardFile, []);
+    res.json({ items: Array.isArray(items) ? items : [] });
+  });
+
+  router.post('/clipboard', async (req, res) => {
+    const { title = '', content = '', tag = '' } = req.body || {};
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: '저장할 내용을 입력해 주세요.' });
+    }
+    if (content.length > 20000) {
+      return res.status(400).json({ error: '한 항목당 최대 20,000자까지 저장할 수 있습니다.' });
+    }
+    const items = await readJsonFile(clipboardFile, []);
+    const list = Array.isArray(items) ? items : [];
+    const newItem = {
+      id: crypto.randomUUID().slice(0, 8),
+      title: String(title || '').trim().slice(0, 100),
+      content: content.trim(),
+      tag: String(tag || '').trim().slice(0, 30),
+      pinned: false,
+      createdAt: new Date().toISOString(),
+    };
+    const next = [newItem, ...list].slice(0, 50);
+    await writeJsonFile(clipboardFile, next);
+    res.status(201).json({ item: newItem, items: next });
+  });
+
+  router.patch('/clipboard/:id', async (req, res) => {
+    const { id } = req.params;
+    const { pinned } = req.body || {};
+    const items = await readJsonFile(clipboardFile, []);
+    const list = (Array.isArray(items) ? items : []).map((it) =>
+      it.id === id ? { ...it, pinned: typeof pinned === 'boolean' ? pinned : !it.pinned } : it
+    );
+    list.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
+    await writeJsonFile(clipboardFile, list);
+    res.json({ items: list });
+  });
+
+  router.delete('/clipboard/:id', async (req, res) => {
+    const { id } = req.params;
+    const items = await readJsonFile(clipboardFile, []);
+    const next = (Array.isArray(items) ? items : []).filter((it) => it.id !== id);
+    await writeJsonFile(clipboardFile, next);
+    res.json({ items: next });
+  });
+
+  // 8. Wake-on-LAN (LAN tools)
+  router.post('/wol', requireLanEnabled, async (req, res) => {
+    const { mac, broadcastIp = '255.255.255.255', port = 9 } = req.body || {};
+    try {
+      const result = await sendWakeOnLan(mac, broadcastIp, port);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: err.message || 'WoL 패킷 전송 실패' });
+    }
+  });
+
+  // 9. LAN / Host TCP Port Check (LAN tools)
+  router.post('/port-check', requireLanEnabled, async (req, res) => {
+    const { host, port, timeoutMs = 2500 } = req.body || {};
+    try {
+      const safeTimeout = Math.min(5000, Math.max(500, Number(timeoutMs) || 2500));
+      const result = await checkTcpPort(host, port, safeTimeout);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message || '포트 점검 오류' });
+    }
+  });
+
+  // 10. SSL Certificate & Security Headers Inspector
+  router.post('/ssl-check', requireNetworkEnabled, async (req, res) => {
+    const { host, port = 443 } = req.body || {};
+    try {
+      const result = await inspectSsl(host, port);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message || 'SSL 진단 중 오류가 발생했습니다.' });
+    }
   });
 
   return router;

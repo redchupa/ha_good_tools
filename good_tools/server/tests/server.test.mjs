@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { isPrivateIp, assertSafePublicUrl } from '../utils/ssrf.mjs';
+import { buildMagicPacket } from '../utils/lan.mjs';
 import { createApp } from '../index.mjs';
 
 describe('SSRF protection', () => {
@@ -90,5 +91,58 @@ describe('API routes', () => {
     assert.equal(delRes.status, 200);
     const afterDel = await delRes.json();
     assert.equal(afterDel.feeds.length, initialCount);
+  });
+
+  it('GET/PUT /api/prefs persists favorites, hiddenTools, and lang', async () => {
+    const res1 = await (await fetch(`${baseUrl}/api/prefs`)).json();
+    assert.deepEqual(res1.favorites, []);
+    assert.equal(res1.lang, 'ko');
+
+    const putRes = await fetch(`${baseUrl}/api/prefs`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favorites: ['char-counter'], hiddenTools: ['magic-eye'], lang: 'en' }),
+    });
+    assert.equal(putRes.status, 200);
+    const saved = await putRes.json();
+    assert.deepEqual(saved.favorites, ['char-counter']);
+    assert.deepEqual(saved.hiddenTools, ['magic-eye']);
+    assert.equal(saved.lang, 'en');
+  });
+
+  it('GET/POST/PATCH/DELETE /api/clipboard persists shared notes', async () => {
+    const postRes = await fetch(`${baseUrl}/api/clipboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'WiFi', content: 'Hello Clipboard', tag: 'home' }),
+    });
+    assert.equal(postRes.status, 201);
+    const { item } = await postRes.json();
+    assert.equal(item.content, 'Hello Clipboard');
+
+    const patchRes = await fetch(`${baseUrl}/api/clipboard/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pinned: true }),
+    });
+    const patched = await patchRes.json();
+    assert.equal(patched.items[0].pinned, true);
+
+    const delRes = await fetch(`${baseUrl}/api/clipboard/${item.id}`, { method: 'DELETE' });
+    const after = await delRes.json();
+    assert.equal(after.items.length, 0);
+  });
+
+  it('validates WoL magic packet and blocks SSRF on /api/ssl-check', async () => {
+    const pkt = buildMagicPacket('AA:BB:CC:DD:EE:FF');
+    assert.equal(pkt.length, 102);
+    assert.throws(() => buildMagicPacket('INVALID-MAC'));
+
+    const sslRes = await fetch(`${baseUrl}/api/ssl-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host: '192.168.1.129' }),
+    });
+    assert.equal(sslRes.status, 400);
   });
 });

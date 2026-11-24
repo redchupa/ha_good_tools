@@ -1,0 +1,152 @@
+import { useState } from 'react';
+import { Upload, Download, ShieldCheck } from 'lucide-react';
+
+export default function ImageStudioTool() {
+  const [srcUrl, setSrcUrl] = useState('');
+  const [origMeta, setOrigMeta] = useState<{ name: string; w: number; h: number; size: number } | null>(null);
+  const [format, setFormat] = useState<'image/webp' | 'image/jpeg' | 'image/png'>('image/webp');
+  const [quality, setQuality] = useState(0.85);
+  const [scalePct, setScalePct] = useState(100);
+  const [outUrl, setOutUrl] = useState('');
+  const [outSize, setOutSize] = useState(0);
+
+  const handleFile = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setSrcUrl(url);
+    const img = new Image();
+    img.onload = () => {
+      setOrigMeta({ name: file.name, w: img.width, h: img.height, size: file.size });
+      processImage(img, format, quality, scalePct);
+    };
+    img.src = url;
+  };
+
+  const processImage = (
+    img: HTMLImageElement,
+    fmt: 'image/webp' | 'image/jpeg' | 'image/png',
+    q: number,
+    pct: number
+  ) => {
+    const w = Math.max(1, Math.round((img.width * pct) / 100));
+    const h = Math.max(1, Math.round((img.height * pct) / 100));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    if (fmt === 'image/jpeg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.drawImage(img, 0, 0, w, h);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        if (outUrl) URL.revokeObjectURL(outUrl);
+        setOutUrl(URL.createObjectURL(blob));
+        setOutSize(blob.size);
+      },
+      fmt,
+      q
+    );
+  };
+
+  const reprocess = (
+    nextFmt = format,
+    nextQ = quality,
+    nextPct = scalePct
+  ) => {
+    if (!srcUrl) return;
+    const img = new Image();
+    img.onload = () => processImage(img, nextFmt, nextQ, nextPct);
+    img.src = srcUrl;
+  };
+
+  const ext = format === 'image/webp' ? 'webp' : format === 'image/jpeg' ? 'jpg' : 'png';
+  const savedPct = origMeta && outSize ? Math.round(((origMeta.size - outSize) / origMeta.size) * 100) : 0;
+
+  return (
+    <div className="space-y-5">
+      <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
+        <Upload className="w-6 h-6 text-indigo-500" />
+        <span className="text-sm font-medium">변환/압축할 이미지를 선택하세요</span>
+        <span className="text-xs text-slate-400 flex items-center gap-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Canvas 재인코딩으로 GPS·카메라 EXIF 메타데이터가 자동 제거됩니다
+        </span>
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+      </label>
+
+      {origMeta && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
+            <label className="space-y-1">
+              <span className="text-slate-500">출력 포맷</span>
+              <select
+                value={format}
+                onChange={(e) => {
+                  const f = e.target.value as 'image/webp' | 'image/jpeg' | 'image/png';
+                  setFormat(f);
+                  reprocess(f, quality, scalePct);
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              >
+                <option value="image/webp">WebP (최고 압축률)</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/png">PNG (무손실)</option>
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-slate-500">품질: {Math.round(quality * 100)}%</span>
+              <input
+                type="range"
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={quality}
+                onChange={(e) => {
+                  const q = Number(e.target.value);
+                  setQuality(q);
+                  reprocess(format, q, scalePct);
+                }}
+                className="w-full"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-slate-500">
+                크기: {scalePct}% ({Math.round((origMeta.w * scalePct) / 100)}×{Math.round((origMeta.h * scalePct) / 100)})
+              </span>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                step={5}
+                value={scalePct}
+                onChange={(e) => {
+                  const p = Number(e.target.value);
+                  setScalePct(p);
+                  reprocess(format, quality, p);
+                }}
+                className="w-full"
+              />
+            </label>
+          </div>
+
+          {outUrl && (
+            <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-500/10 flex flex-col items-center gap-4">
+              <div className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                원본 {(origMeta.size / 1024).toFixed(1)} KB → 결과 {(outSize / 1024).toFixed(1)} KB ({savedPct >= 0 ? `${savedPct}% 절감` : `${Math.abs(savedPct)}% 증가`}) · EXIF 제거됨
+              </div>
+              <img src={outUrl} alt="Converted" className="max-h-72 rounded-xl shadow-sm" />
+              <a
+                href={outUrl}
+                download={`${origMeta.name.replace(/\.[^.]+$/, '')}-clean.${ext}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium"
+              >
+                <Download className="w-4 h-4" /> 변환 이미지 다운로드 (.{ext})
+              </a>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
