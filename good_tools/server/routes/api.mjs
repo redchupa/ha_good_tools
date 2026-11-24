@@ -74,7 +74,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.4.1' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.5.0' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
@@ -123,14 +123,45 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     });
   }
 
-  async function readJsonFile(filePath, fallback) {
+  // Files whose unreadable content was moved aside since start-up (reported by /health).
+  const recovered = new Set();
+  const isList = Array.isArray;
+  const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const SHAPES = new Map([[feedsFile, isList], [clipboardFile, isList], [prefsFile, isRecord]]);
+
+  // Keep the unreadable original next to the data file, then continue with the fallback.
+  async function quarantine(filePath, reason) {
+    const target = `${filePath}.corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     try {
-      const raw = await fs.readFile(filePath, 'utf8');
-      return JSON.parse(raw);
+      await fs.rename(filePath, target);
+      recovered.add(path.basename(filePath, '.json'));
+      console.error(`[Good Tools] ${path.basename(filePath)} could not be used (${reason}); kept as ${path.basename(target)}`);
     } catch (err) {
       if (err.code !== 'ENOENT') throw err;
-      return fallback;
     }
+  }
+
+  async function readJsonFile(filePath, fallback) {
+    let raw;
+    try {
+      raw = await fs.readFile(filePath, 'utf8');
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
+      return structuredClone(fallback);
+    }
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      await quarantine(filePath, 'invalid JSON');
+      return structuredClone(fallback);
+    }
+    const valid = SHAPES.get(filePath);
+    if (valid && !valid(data)) {
+      await quarantine(filePath, 'unexpected shape');
+      return structuredClone(fallback);
+    }
+    return data;
   }
 
   function mutateFile(filePath, fallback, update) {
@@ -152,8 +183,16 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     return next;
   }
 
+  // Reads share the per-file queue so a recovery never races a write that just replaced the file.
+  function readQueued(filePath, fallback) {
+    const prev = writeQueues.get(filePath) || Promise.resolve();
+    const next = prev.catch(() => {}).then(() => readJsonFile(filePath, fallback));
+    writeQueues.set(filePath, next);
+    return next;
+  }
+
   function loadFeeds() {
-    return readJsonFile(feedsFile, DEFAULT_FEEDS);
+    return readQueued(feedsFile, DEFAULT_FEEDS);
   }
 
   // Health & runtime config
@@ -164,6 +203,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       allowNetworkTools,
       allowLanTools,
       defaultTheme,
+      recovered: [...recovered],
       timestamp: new Date().toISOString(),
     });
   });
@@ -443,65 +483,133 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot',
   ]);
 
-  router.get('/prefs', asyncRoute(async (_req, res) => {
-    const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });
-    res.json({
-      favorites: Array.isArray(prefs.favorites) ? prefs.favorites : [],
-      hiddenTools: Array.isArray(prefs.hiddenTools) ? prefs.hiddenTools : [],
+  const toolIds = value => Array.isArray(value)
+    ? [...new Set(value.filter(x => typeof x === 'string' && x.length <= 64))].slice(0, 100)
+    : [];
+  function normalizePrefs(prefs = {}) {
+    return {
+      favorites: toolIds(prefs.favorites),
+      hiddenTools: toolIds(prefs.hiddenTools),
       lang: prefs.lang === 'en' ? 'en' : 'ko',
       theme: VALID_THEMES.has(prefs.theme) ? prefs.theme : defaultTheme,
-    });
+      rev: Number.isInteger(prefs.rev) && prefs.rev >= 0 ? prefs.rev : 0,
+    };
+  }
+  // Apply {add, remove} so changes from different devices merge instead of replacing each other.
+  function applyListChange(list, change, prepend) {
+    if (!change || typeof change !== 'object') return list;
+    const add = toolIds(change.add);
+    const remove = new Set(toolIds(change.remove));
+    const kept = list.filter(id => !remove.has(id) && !add.includes(id));
+    return toolIds(prepend ? [...add, ...kept] : [...kept, ...add]);
+  }
+
+  router.get('/prefs', asyncRoute(async (_req, res) => {
+    res.json(normalizePrefs(await readQueued(prefsFile, {})));
   }));
 
+  // Whole-list replacement, kept for pages loaded from earlier versions.
   router.put('/prefs', asyncRoute(async (req, res) => {
     const { favorites, hiddenTools, lang, theme } = req.body || {};
-    const next = await mutateFile(prefsFile, {}, current => ({
-      favorites: Array.isArray(favorites) ? favorites.filter((x) => typeof x === 'string').slice(0, 100) : current.favorites || [],
-      hiddenTools: Array.isArray(hiddenTools) ? hiddenTools.filter((x) => typeof x === 'string').slice(0, 100) : current.hiddenTools || [],
-      lang: lang === 'en' || lang === 'ko' ? lang : current.lang || 'ko',
-      theme: VALID_THEMES.has(theme) ? theme : (VALID_THEMES.has(current.theme) ? current.theme : defaultTheme),
-    }));
+    const next = await mutateFile(prefsFile, {}, stored => {
+      const current = normalizePrefs(stored);
+      return {
+        favorites: Array.isArray(favorites) ? toolIds(favorites) : current.favorites,
+        hiddenTools: Array.isArray(hiddenTools) ? toolIds(hiddenTools) : current.hiddenTools,
+        lang: lang === 'en' || lang === 'ko' ? lang : current.lang,
+        theme: VALID_THEMES.has(theme) ? theme : current.theme,
+        rev: current.rev + 1,
+      };
+    });
+    res.json(next);
+  }));
+
+  router.patch('/prefs', asyncRoute(async (req, res) => {
+    const { favorites, hiddenTools, lang, theme } = req.body || {};
+    const next = await mutateFile(prefsFile, {}, stored => {
+      const current = normalizePrefs(stored);
+      return {
+        favorites: applyListChange(current.favorites, favorites, true),
+        hiddenTools: applyListChange(current.hiddenTools, hiddenTools, false),
+        lang: lang === 'en' || lang === 'ko' ? lang : current.lang,
+        theme: VALID_THEMES.has(theme) ? theme : current.theme,
+        rev: current.rev + 1,
+      };
+    });
     res.json(next);
   }));
 
   // 7. Shared Family Clipboard (/data/clipboard.json)
+  const MAX_PINNED = 20;
+  const MAX_UNPINNED = 50;
+  const clipError = (status, error, extra = {}) => Object.assign(new Error(error), { status, extra });
+  // Pinned notes stay first and are never evicted by the unpinned limit.
+  function normalizeClips(list) {
+    const items = list
+      .filter(it => it && typeof it === 'object' && typeof it.id === 'string' && typeof it.content === 'string')
+      .map(it => ({ ...it, pinned: Boolean(it.pinned), rev: Number.isInteger(it.rev) ? it.rev : 0 }));
+    return [
+      ...items.filter(it => it.pinned).slice(0, MAX_PINNED),
+      ...items.filter(it => !it.pinned).slice(0, MAX_UNPINNED),
+    ];
+  }
+  function clipText(body, current = {}) {
+    const pick = (key, max) => (typeof body[key] === 'string' ? body[key].trim().slice(0, max) : current[key] ?? '');
+    const content = typeof body.content === 'string' ? body.content.trim() : current.content;
+    if (!content) throw clipError(400, '저장할 내용을 입력해 주세요.');
+    if (content.length > 20000) throw clipError(400, '한 항목당 최대 20,000자까지 저장할 수 있습니다.');
+    return { title: pick('title', 100), content, tag: pick('tag', 30) };
+  }
+  function sendClipError(res, err) {
+    if (!err.status) throw err;
+    return res.status(err.status).json({ error: err.message, ...err.extra });
+  }
+
   router.get('/clipboard', asyncRoute(async (_req, res) => {
-    const items = await readJsonFile(clipboardFile, []);
-    res.json({ items: Array.isArray(items) ? items : [] });
+    res.json({ items: normalizeClips(await readQueued(clipboardFile, [])) });
   }));
 
   router.post('/clipboard', asyncRoute(async (req, res) => {
-    const { title = '', content = '', tag = '' } = req.body || {};
-    if (!content || typeof content !== 'string' || !content.trim()) {
-      return res.status(400).json({ error: '저장할 내용을 입력해 주세요.' });
-    }
-    if (content.length > 20000) {
-      return res.status(400).json({ error: '한 항목당 최대 20,000자까지 저장할 수 있습니다.' });
-    }
-    const newItem = {
-      id: crypto.randomUUID().slice(0, 8),
-      title: String(title || '').trim().slice(0, 100),
-      content: content.trim(),
-      tag: String(tag || '').trim().slice(0, 30),
-      pinned: false,
-      createdAt: new Date().toISOString(),
-    };
-    const next = await mutateFile(clipboardFile, [], list => [newItem, ...list].slice(0, 50));
-    res.status(201).json({ item: newItem, items: next });
+    const body = req.body || {};
+    if (typeof body.content !== 'string') return res.status(400).json({ error: '저장할 내용을 입력해 주세요.' });
+    try {
+      const now = new Date().toISOString();
+      const newItem = { id: crypto.randomUUID().slice(0, 8), ...clipText(body), pinned: false, rev: 0, createdAt: now, updatedAt: now };
+      const next = await mutateFile(clipboardFile, [], list => normalizeClips([newItem, ...normalizeClips(list)]));
+      res.status(201).json({ item: newItem, items: next });
+    } catch (err) { return sendClipError(res, err); }
   }));
 
+  // Pin toggles always apply; text edits require the revision the editor started from.
   router.patch('/clipboard/:id', asyncRoute(async (req, res) => {
     const { id } = req.params;
-    const { pinned } = req.body || {};
-    const list = await mutateFile(clipboardFile, [], items => items.map((it) =>
-      it.id === id ? { ...it, pinned: typeof pinned === 'boolean' ? pinned : !it.pinned } : it
-    ).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))));
-    res.json({ items: list });
+    const body = req.body || {};
+    const editing = ['title', 'content', 'tag'].some(key => key in body);
+    try {
+      let updated;
+      const list = await mutateFile(clipboardFile, [], stored => {
+        const items = normalizeClips(stored);
+        const index = items.findIndex(it => it.id === id);
+        if (index < 0) throw clipError(404, '다른 기기에서 삭제된 메모입니다. / This note was deleted on another device.', { items });
+        const current = items[index];
+        if (editing && body.rev !== current.rev) {
+          throw clipError(409, '다른 기기에서 먼저 수정했습니다. / Changed on another device.', { item: current, items });
+        }
+        const pinned = typeof body.pinned === 'boolean' ? body.pinned : (editing ? current.pinned : !current.pinned);
+        if (pinned && !current.pinned && items.filter(it => it.pinned).length >= MAX_PINNED) {
+          throw clipError(400, `고정 메모는 최대 ${MAX_PINNED}개입니다. / Up to ${MAX_PINNED} pinned notes.`, { items });
+        }
+        updated = { ...current, ...(editing ? clipText(body, current) : {}), pinned, rev: current.rev + 1, updatedAt: new Date().toISOString() };
+        items[index] = updated;
+        return normalizeClips(items);
+      });
+      res.json({ item: updated, items: list });
+    } catch (err) { return sendClipError(res, err); }
   }));
 
   router.delete('/clipboard/:id', asyncRoute(async (req, res) => {
     const { id } = req.params;
-    const next = await mutateFile(clipboardFile, [], items => items.filter(it => it.id !== id));
+    const next = await mutateFile(clipboardFile, [], items => normalizeClips(items).filter(it => it.id !== id));
     res.json({ items: next });
   }));
 

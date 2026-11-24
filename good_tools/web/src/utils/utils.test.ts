@@ -74,6 +74,8 @@ describe('CSV import', () => {
   it('rejects incomplete records and parses tab-separated records', () => {
     expect(() => parseCsv('a,b\n"unfinished')).toThrow();
     expect(parseCsv('a\tb\nx\ty')).toEqual([{ a: 'x', b: 'y' }]);
+    expect(parseCsv('name;price\n"Kim; Jr";1,5')).toEqual([{ name: 'Kim; Jr', price: '1,5' }]);
+    expect(parseCsv('only\nx,y')).toEqual([{ only: 'x,y' }]);
   });
 });
 

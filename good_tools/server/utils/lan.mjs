@@ -17,9 +17,11 @@ export function buildMagicPacket(macAddress) {
   return packet;
 }
 
-function isLanAddress(ip) {
+export function isLanAddress(ip) {
   if (net.isIPv4(ip)) {
-    const [a, b] = ip.split('.').map(Number);
+    const [a, b, c] = ip.split('.').map(Number);
+    // 172.30.32.0/23 is the Supervisor network (Core, Supervisor and other apps).
+    if (a === 172 && b === 30 && (c === 32 || c === 33)) return false;
     return a === 10 || a === 192 && b === 168 || a === 172 && b >= 16 && b <= 31;
   }
   return net.isIPv6(ip) && /^f[cd]/i.test(ip);

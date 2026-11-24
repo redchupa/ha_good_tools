@@ -18,6 +18,10 @@ it('checks ingress identity and feature permission before accessing HA', async (
   const base = 'http://127.0.0.1:' + server.address().port;
   try {
     assert.equal((await fetch(base+'/entities?q=light')).status,403);
+    const stranger = 'a'.repeat(32);
+    const denied = await fetch(base+'/capabilities',{headers:{'x-remote-user-id':stranger}});
+    assert.equal(denied.status,403);
+    assert.equal((await denied.json()).userId,stranger);
     const headers = {'x-remote-user-id':'allowed','content-type':'application/json'};
     assert.equal((await fetch(base+'/template',{method:'POST',headers,body:'{}'})).status,403);
     assert.equal(calls.length,0);

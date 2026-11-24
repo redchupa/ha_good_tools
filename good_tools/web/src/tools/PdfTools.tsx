@@ -2,6 +2,8 @@ import { useText } from '../hooks/language';
 import { downloadBlob } from '../utils/download';
 import { useEffect, useRef, useState } from 'react';
 import { Upload, Download, Trash2 } from 'lucide-react';
+import { PdfPagePreview } from '../components/PdfPagePreview';
+import { canvasToBlob, drawImage } from '../utils/imageConvert';
 
 export default function PdfTools() {
   const t = useText();
@@ -15,16 +17,9 @@ export default function PdfTools() {
   const [msg, setMsg] = useState('');
 
   const [progress, setProgress] = useState(0);
-  const [preview, setPreview] = useState('');
   const [result, setResult] = useState<{ blob:Blob; name:string } | null>(null);
   const worker = useRef<Worker | null>(null);
   useEffect(() => () => worker.current?.terminate(), []);
-  useEffect(() => {
-    if (!splitFile) { setPreview(''); return; }
-    const url = URL.createObjectURL(splitFile);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [splitFile]);
   const cancel = () => { worker.current?.terminate(); worker.current = null; setBusy(false); };
   const process = (mode:string, input:File[], name = '') => {
     cancel(); setMsg(''); setResult(null); setProgress(0);
@@ -46,7 +41,23 @@ export default function PdfTools() {
   };
   const handleMerge = () => process('merge', files, 'merged.pdf');
   const handleSplit = () => splitFile && process('split', [splitFile], 'extracted-' + splitFile.name);
-  const handleImgToPdf = () => process('img2pdf', imgFiles, 'images.pdf');
+  // pdf-lib embeds only PNG and JPEG and decodes PNG to full RGBA, so anything else (WebP, GIF,
+  // HEIC on Safari) or anything over 4000 px is first re-encoded to JPEG on a canvas.
+  const handleImgToPdf = async () => {
+    setBusy(true); setMsg('');
+    try {
+      const ready: File[] = [];
+      for (const file of imgFiles) {
+        if (file.type === 'image/jpeg' && file.size < 8 * 1024 * 1024) { ready.push(file); continue; }
+        const { canvas } = await drawImage(file, { background: '#ffffff', maxWidth: 4000 });
+        ready.push(new File([await canvasToBlob(canvas, 'image/jpeg', 0.92)], file.name + '.jpg', { type: 'image/jpeg' }));
+      }
+      process('img2pdf', ready, 'images.pdf');
+    } catch (e) {
+      setBusy(false);
+      setMsg(e instanceof Error ? e.message : t('이미지를 읽지 못했습니다.', 'Could not read an image.'));
+    }
+  };
   const onSelectSplit = (file:File) => {
     setPageCount(0);
     setSplitFile(file.size <= 32*1024*1024 ? file : null);
@@ -153,10 +164,10 @@ export default function PdfTools() {
         <div className="space-y-4">
           <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
             <Upload className="w-6 h-6 text-indigo-500" />
-            <span className="text-sm font-medium">{t('PDF로 합칠 PNG / JPG 이미지를 선택하세요','Choose PNG or JPEG images.')}</span>
+            <span className="text-sm font-medium">{t('PDF로 합칠 이미지를 선택하세요 (PNG·JPG·WebP 등)','Choose images (PNG, JPG, WebP…).')}</span>
             <input
               type="file"
-              accept="image/png,image/jpeg"
+              accept="image/*"
               multiple
               className="hidden"
               onChange={(e) => e.target.files && setImgFiles(Array.from(e.target.files))}
@@ -175,8 +186,9 @@ export default function PdfTools() {
         </div>
       )}
 
-      {tab === 'split' && preview && pageCount > 0 && <details><summary>선택 페이지 미리보기 / Page preview</summary>
-        <iframe title="PDF preview" sandbox="" className="h-72 w-full" src={preview + '#page=' + Math.min(pageCount, Math.max(1,parseInt(pageRange) || 1))} />
+      {tab === 'split' && splitFile && pageCount > 0 && <details>
+        <summary className="cursor-pointer text-xs">{t('선택 페이지 미리보기', 'Page preview')}</summary>
+        <PdfPagePreview file={splitFile} page={parseInt(pageRange) || 1} />
       </details>}
       {busy && <div><progress value={progress} max={100} /> <button onClick={cancel}>취소 / Cancel</button></div>}
       {result && <button className="rounded-lg border px-3 py-2" onClick={()=>downloadBlob(result.blob,result.name)}>저장 / Save {result.name} ({Math.ceil(result.blob.size/1024)} KiB)</button>}

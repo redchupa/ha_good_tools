@@ -65,7 +65,12 @@ export default function CurrencyCalcTool() {
       }
       setRates(prev=>({...prev,...values}));
       setSources(prev=>({...prev,...labels}));
-      setStatus('환율 갱신 완료 / Updated');
+      // The ECB reference feed does not publish every currency (for example TWD and VND).
+      const missing = DEFAULT_CURRENCIES.filter(c => c.code !== 'KRW' && !(c.code in values)).map(c => c.code);
+      const total = DEFAULT_CURRENCIES.length - 1;
+      setStatus(missing.length
+        ? `${total - missing.length}/${total}개 갱신 (${feed.date}) · ${missing.join('·')}는 출처에 없어 직접 입력해 주세요 / ${missing.join(', ')} not in the feed`
+        : `${total}개 모두 갱신 (${feed.date}) / All updated`);
     } catch { setStatus('갱신 실패 · 저장된 환율 사용 / Using cached rates'); }
     finally { setLoading(false); }
   };

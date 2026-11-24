@@ -13,8 +13,16 @@ export function haRouter({
   const canNotify = /^notify\.mobile_app_[a-z0-9_]+$/.test(notify);
   router.use((req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    if (req.socket.remoteAddress !== '172.30.32.2' || !token || !users.includes(req.get('X-Remote-User-Id'))) {
+    if (req.socket.remoteAddress !== '172.30.32.2' || !token) {
       return res.status(403).json({ error: 'HA 연동 접근 권한이 없습니다. / HA access is disabled.' });
+    }
+    const userId = req.get('X-Remote-User-Id') || '';
+    if (!users.includes(userId)) {
+      // Show the signed-in person their own ID so an administrator can add it to ha_user_ids.
+      return res.status(403).json({
+        error: 'HA 연동 접근 권한이 없습니다. / HA access is disabled.',
+        userId: /^[0-9a-f]{32}$/.test(userId) ? userId : undefined,
+      });
     }
     next();
   });

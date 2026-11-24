@@ -33,9 +33,14 @@ jobs:
         with:
           ref: ${{ inputs.commit }}
           persist-credentials: false
-      - name: Download verified frontend
+      - name: Check that every version string matches
         run: |
           grep -Fx "version: \"$VERSION\"" good_tools/config.yaml
+          grep -Fx "export APP_VERSION=\"$VERSION\"" good_tools/run.sh
+          grep -F "|| '$VERSION'" good_tools/server/index.mjs
+          grep -F "appVersion = '$VERSION'" good_tools/server/routes/api.mjs
+      - name: Download verified frontend
+        run: |
           gh release download "v$VERSION-rc.1" --repo "$GITHUB_REPOSITORY" -p web-dist.tar.gz
           echo "$DIST_SHA  web-dist.tar.gz" | sha256sum -c -
           mkdir good_tools/web-dist
@@ -47,6 +52,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
+      # Published versions are immutable: installs that already pulled $VERSION must keep the same bits.
+      - name: Refuse to overwrite a published version
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:$VERSION" >/dev/null 2>&1; then
+            echo "::error::$IMAGE:$VERSION already exists. Bump the version instead of re-publishing it."
+            exit 1
+          fi
       - name: Build runtime images
         run: |
           for spec in amd64:linux/amd64:3.23 aarch64:linux/arm64:3.23 armv7:linux/arm/v7:3.22; do
@@ -57,6 +69,29 @@ jobs:
               --label "org.opencontainers.image.revision=$SHA" \
               --tag "$IMAGE:$VERSION-$arch-$SHA" --push
           done
+      # Start each architecture under QEMU without the Supervisor and require a healthy server with
+      # the expected version and UI before the shared version tag is created.
+      - name: Smoke test every architecture
+        run: |
+          for spec in amd64:linux/amd64 aarch64:linux/arm64 armv7:linux/arm/v7; do
+            IFS=: read -r arch platform <<< "$spec"
+            ref="$IMAGE:$VERSION-$arch-$SHA"
+            echo "$arch node $(docker run --rm --platform "$platform" --entrypoint node "$ref" -v)"
+            id=$(docker run -d --platform "$platform" --entrypoint node -p 18099:8099 \
+              -e PUBLIC_DIR=/app/public -e DATA_DIR=/tmp/good-tools "$ref" /app/server/index.mjs)
+            health=
+            for _ in $(seq 1 60); do
+              health=$(curl -fsS http://127.0.0.1:18099/api/health) && break
+              sleep 2
+            done
+            docker logs "$id" 2>&1 | tail -20
+            if [ -z "$health" ]; then docker rm -f "$id"; echo "::error::$arch did not start"; exit 1; fi
+            echo "$health" | grep -F "\"version\":\"$VERSION\""
+            curl -fsS http://127.0.0.1:18099/ | grep -F '<div id="root">'
+            docker rm -f "$id"
+          done
+      - name: Publish the version tag
+        run: |
           docker buildx imagetools create --tag "$IMAGE:$VERSION" \
             "$IMAGE:$VERSION-amd64-$SHA" "$IMAGE:$VERSION-aarch64-$SHA" "$IMAGE:$VERSION-armv7-$SHA"
           docker buildx imagetools inspect "$IMAGE:$VERSION"

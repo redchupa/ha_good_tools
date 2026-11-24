@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { prefsStore } from './prefsStore';
 
 export type ThemeMode =
   | 'system'
@@ -56,11 +57,13 @@ const VALID_THEMES = new Set<string>(THEME_OPTIONS.map((t) => t.id));
 
 export type LangMode = 'ko' | 'en';
 
+function usePrefsState() {
+  return useSyncExternalStore(prefsStore.subscribe, prefsStore.getState);
+}
+
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('good_tools_theme') || 'system';
-    return VALID_THEMES.has(saved) ? (saved as ThemeMode) : 'system';
-  });
+  const stored = usePrefsState().theme;
+  const theme: ThemeMode = VALID_THEMES.has(stored) ? (stored as ThemeMode) : 'system';
 
   useEffect(() => {
     const root = document.documentElement;
@@ -76,8 +79,6 @@ export function useTheme() {
       }
     };
     apply(theme);
-    localStorage.setItem('good_tools_theme', theme);
-
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
       if (theme === 'system') apply('system');
@@ -86,98 +87,18 @@ export function useTheme() {
     return () => mq.removeEventListener('change', handler);
   }, [theme]);
 
-  const setTheme = useCallback((next: ThemeMode) => {
-    setThemeState(next);
-    fetch('./api/prefs', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ theme: next }),
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetch('./api/prefs')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.theme && VALID_THEMES.has(data.theme)) {
-          setThemeState(data.theme as ThemeMode);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
+  const setTheme = useCallback((next: ThemeMode) => prefsStore.change({ theme: next }), []);
   return { theme, setTheme };
 }
 
 export function useSyncedPrefs() {
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('good_tools_favorites') || '[]');
-    } catch {
-      return [];
-    }
-  });
-
-  const [hiddenTools, setHiddenTools] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('good_tools_hidden') || '[]');
-    } catch {
-      return [];
-    }
-  });
-
-  const [lang, setLangState] = useState<LangMode>(() => {
-    return (localStorage.getItem('good_tools_lang') as LangMode) === 'en' ? 'en' : 'ko';
-  });
-
-  useEffect(() => {
-    let active = true;
-    fetch('./api/prefs')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!active || !data) return;
-        if (Array.isArray(data.favorites)) {
-          setFavorites(data.favorites);
-          localStorage.setItem('good_tools_favorites', JSON.stringify(data.favorites));
-        }
-        if (Array.isArray(data.hiddenTools)) {
-          setHiddenTools(data.hiddenTools);
-          localStorage.setItem('good_tools_hidden', JSON.stringify(data.hiddenTools));
-        }
-        if (data.lang === 'en' || data.lang === 'ko') {
-          setLangState(data.lang);
-          localStorage.setItem('good_tools_lang', data.lang);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const persist = useCallback((key: string, storage: string, value: string[] | LangMode) => {
-    localStorage.setItem(storage, typeof value === 'string' ? value : JSON.stringify(value));
-    fetch('./api/prefs', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [key]: value }),
-    }).catch(() => {});
-  }, []);
-
-  const toggleFavorite = (id: string) => {
-    const next = favorites.includes(id) ? favorites.filter(x => x !== id) : [id, ...favorites];
-    setFavorites(next);
-    persist('favorites', 'good_tools_favorites', next);
-  };
-  const toggleHidden = (id: string) => {
-    const next = hiddenTools.includes(id) ? hiddenTools.filter(x => x !== id) : [...hiddenTools, id];
-    setHiddenTools(next);
-    persist('hiddenTools', 'good_tools_hidden', next);
-  };
-  const setLang = (next: LangMode) => {
-    setLangState(next);
-    persist('lang', 'good_tools_lang', next);
-  };
-
-  return { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang };
+  const { favorites, hiddenTools, lang, syncError } = usePrefsState();
+  const toggleFavorite = useCallback((id: string) => prefsStore.change({
+    favorites: prefsStore.getState().favorites.includes(id) ? { remove: [id] } : { add: [id] },
+  }), []);
+  const toggleHidden = useCallback((id: string) => prefsStore.change({
+    hiddenTools: prefsStore.getState().hiddenTools.includes(id) ? { remove: [id] } : { add: [id] },
+  }), []);
+  const setLang = useCallback((next: LangMode) => prefsStore.change({ lang: next }), []);
+  return { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang, syncError, dismissSyncError: prefsStore.dismissError };
 }

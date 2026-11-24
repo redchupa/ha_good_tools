@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, truncateSync, mkdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { createServer } from 'node:http';
+import { networkInterfaces } from 'node:os';
 import { PDFDocument } from 'pdf-lib';
 import { createApp } from '../../server/index.mjs';
 
@@ -11,13 +12,19 @@ const entry = html.match(/<script[^>]*src="\.\/([^"]+)"/)[1];
 assert.ok(gzipSync(readFileSync('dist/'+entry)).length < 120000, 'Initial JS gzip budget exceeded');
 if (!process.env.QA_DATA_DIR) throw Error('Set QA_DATA_DIR to a temporary directory');
 const app = createApp({publicDir:process.cwd()+'/dist', dataDir:process.env.QA_DATA_DIR, allowNetworkTools:false});
-const http = createServer((req,res) => {
+const handler = (req,res) => {
   if (!req.url.startsWith('/qa/')) { res.writeHead(404).end(); return; }
   req.url = req.url.slice(3);
   app(req,res);
-});
+};
+const http = createServer(handler);
 await new Promise(resolve=>http.listen(0,'127.0.0.1',resolve));
 const base = 'http://127.0.0.1:'+http.address().port+'/qa/';
+// A non-loopback address is not a secure context, like Home Assistant opened over LAN HTTP.
+const lanIp = Object.values(networkInterfaces()).flat().find(a => a && a.family === 'IPv4' && !a.internal)?.address;
+const lan = lanIp ? createServer(handler) : null;
+if (lan) await new Promise(resolve=>lan.listen(0,lanIp,resolve));
+const lanBase = lan ? 'http://'+lanIp+':'+lan.address().port+'/qa/' : '';
 let browser;
 try {
   browser = await chromium.launch({executablePath:process.env.CHROMIUM_BIN, headless:true, args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
@@ -37,6 +44,12 @@ try {
   await input.setInputFiles(large);
   await page.getByRole('button',{name:'취소',exact:true}).click();
   await page.getByText('취소됨',{exact:true}).waitFor();
+  // Choosing the same file again through the real picker must start a new calculation.
+  const again = page.waitForEvent('filechooser');
+  await page.getByText('파일 선택 (로컬 계산)').click();
+  await (await again).setFiles(large);
+  await page.getByRole('button',{name:'취소',exact:true}).waitFor();
+  await page.getByRole('button',{name:'취소',exact:true}).click();
   await open('pdf-tools');
   await page.getByRole('button',{name:'PDF 페이지 추출'}).click();
   const pdf = await PDFDocument.create();pdf.addPage();pdf.addPage();
@@ -50,12 +63,56 @@ try {
   await page.reload(); await page.getByText('QA',{exact:true}).last().waitFor();
   await page.getByRole('button',{name:'돌림판 돌리기'}).click();
   await page.getByText(/당첨:/).waitFor();
+  await open('file-convert');
+  const twoPages = await PDFDocument.create();twoPages.addPage([200,100]);twoPages.addPage([200,100]);
+  await page.locator('input[type=file]').setInputFiles({name:'sample.pdf',mimeType:'application/pdf',buffer:Buffer.from(await twoPages.save())});
+  await page.getByRole('button',{name:'변환',exact:true}).click();
+  await page.getByText('sample-p2.png').waitFor();
+  await page.getByRole('button',{name:'모두 ZIP으로 저장'}).waitFor();
+  const zipDownload = page.waitForEvent('download');
+  await page.getByRole('button',{name:'모두 ZIP으로 저장'}).click();
+  assert.equal((await zipDownload).suggestedFilename(),'sample-png.zip');
+  await page.getByRole('tab',{name:'이미지 형식·크기 변환'}).click();
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64');
+  await page.locator('input[type=file]').setInputFiles({name:'dot.png',mimeType:'image/png',buffer:png});
+  await page.getByRole('button',{name:'변환',exact:true}).click();
+  await page.getByText('dot.jpg').waitFor();
+  await open('encoder');
+  await page.getByRole('button',{name:'텍스트 → Hex'}).click();
+  await page.locator('textarea').first().fill('Hi!');
+  assert.equal(await page.getByLabel('결과').inputValue(),'48 69 21');
+  await page.locator('textarea').first().fill('H4sIAAAAAAACCvNIzcnJBwCCidH3BQAAAA==');
+  await page.getByRole('button',{name:'입력 형식 자동 감지'}).click();
+  await page.getByLabel('출력 형식').selectOption('plain');
+  assert.equal(await page.getByLabel('결과').inputValue(),'Hello');
+  if (lanBase) {
+    const insecure = await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
+    insecure.on('pageerror',e=>errors.push(e.message));
+    await insecure.goto(lanBase+'#/tool/crypto-tool');
+    assert.equal(await insecure.evaluate(() => window.isSecureContext), false);
+    await insecure.locator('input[type=password]').fill('family key');
+    await insecure.locator('textarea').first().fill('HTTP 암호화');
+    await insecure.getByRole('button',{name:'AES 암호화'}).click();
+    const out = insecure.locator('textarea[readonly]');
+    await insecure.waitForFunction(() => document.querySelector('textarea[readonly]')?.value.startsWith('GT1.'), null, {timeout:60000});
+    await insecure.locator('textarea').first().fill(await out.inputValue());
+    await insecure.getByRole('button',{name:'AES 복호화'}).click();
+    await insecure.waitForFunction(() => document.querySelector('textarea[readonly]')?.value === 'HTTP 암호화', null, {timeout:60000});
+    await insecure.getByRole('button',{name:'HMAC / SHA 해시'}).click();
+    await insecure.getByText('MD5',{exact:true}).waitFor();
+    await insecure.goto(lanBase);
+    await insecure.locator('h3',{hasText:'음성 문자 변환 (STT)'}).waitFor();
+    assert.ok(await insecure.getByText('지금 사용 불가').count() > 0, 'HTTP page should mark HTTPS-only tools');
+    await insecure.close();
+  }
   await page.goto(base);await page.getByText('최근 사용한 도구').waitFor();
   await page.keyboard.press('Control+k');
   await page.locator('input[placeholder*=키워드]').waitFor();
   assert.deepEqual(errors,[]);
-  console.log('PASS: bundle budget, delayed preferences, mobile file hash/cancel, PDF extraction, reduced motion, recent tools, keyboard input');
+  console.log('PASS: bundle budget, delayed preferences, mobile file hash/cancel/re-pick, PDF extraction, file converter (PDF→PNG, ZIP, PNG→JPG), encoder (hex, gzip detect), '
+    + (lanBase ? 'HTTP crypto round trip and availability chips, ' : 'HTTP checks skipped (no LAN address), ') + 'reduced motion, recent tools, keyboard input');
 } finally {
   await browser?.close();
   await new Promise(resolve=>http.close(resolve));
+  if (lan) await new Promise(resolve=>lan.close(resolve));
 }

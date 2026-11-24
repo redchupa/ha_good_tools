@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { rememberTool, shareTool } from '../utils/toolNavigation';
+import { toolAvailability, useEnvironment } from '../utils/capabilities';
 import { CopyButton } from './CopyButton';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Star, Wifi, ShieldAlert } from 'lucide-react';
@@ -18,6 +19,7 @@ export function ToolShell({ lang, tool, isFavorite, onToggleFavorite, children }
   useEffect(() => { rememberTool(tool.id); }, [tool.id]);
   const en = lang === 'en';
   const link = shareTool(tool.id);
+  const avail = toolAvailability(tool.id, useEnvironment());
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -67,6 +69,14 @@ export function ToolShell({ lang, tool, isFavorite, onToggleFavorite, children }
         </button>
       </div>
 
+      {avail.level !== 'ok' && (
+        <div role="note" className={`flex items-start gap-2 p-3 rounded-xl text-xs ${avail.level === 'blocked'
+          ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
+          : 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200'}`}>
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span>{en ? avail.en : avail.ko}</span>
+        </div>
+      )}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xs">
         {children}
       </div>
