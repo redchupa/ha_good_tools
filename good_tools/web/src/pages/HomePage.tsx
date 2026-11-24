@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Star, Sparkles, Wifi, ShieldAlert, Radio } from 'lucide-react';
+import { Search, Star, Wifi, ShieldAlert, Radio } from 'lucide-react';
 import { TOOLS, CATEGORY_LABELS, type ToolCategory } from '../data/tools';
 import { ToolIcon } from '../components/ToolIcon';
 import type { LangMode } from '../hooks/usePreferences';
@@ -41,17 +41,11 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
     <div className="space-y-6">
       <div className="hero-banner relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white shadow-lg">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-xs text-xs font-medium mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            {lang === 'en' ? 'Home Assistant All-in-One Utility Suite' : 'Home Assistant 올인원 유틸리티 스위트'}
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            {lang === 'en' ? 'Good Tools — Online Utility Suite' : 'Good Tools — 온라인 도구 모음'}
+            Good Tools
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-blue-100">
-            {lang === 'en'
-              ? 'Ad-free, privacy-first everyday, Home Assistant, and developer tools running inside your local Home Assistant.'
-              : '광고·추적 없이 로컬 Home Assistant 안에서 안전하고 빠르게 동작하는 일상·HA·개발자 유틸리티 모음입니다.'}
+          <p className="mt-1.5 text-sm sm:text-base text-white/85">
+            {lang === 'en' ? 'Useful Tools Collection' : '좋은 도구 모음'}
           </p>
 
           <div className="mt-5 relative max-w-lg">
