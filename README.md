@@ -1,85 +1,74 @@
-# Good Tools for Home Assistant
+# 🧰 Good Tools for Home Assistant
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fredchupa%2Fha_good_tools)
 
-광고·추적 없이 Home Assistant 사이드바(Ingress)에서 바로 사용할 수 있는 **올인원 온라인 유틸리티 · Home Assistant 특화 · 개발자 도구 모음** 앱(Add-on)입니다.
+> **광고도, 회원가입도, 개인정보 유출 걱정도 없는 나만의 Home Assistant 올인원 만능 도구함!**
 
-## 주요 특징
+인터넷에서 PDF 합치기, 사진 용량 줄이기, QR코드 만들기, 글자수 세기 같은 도구를 찾을 때마다 덕지덕지 붙은 광고와 수상한 사이트 때문에 불편하셨나요?  
+**Good Tools**는 일상에서 자주 쓰는 실용 도구부터 스마트홈 관리 도구까지 한곳에 모아, **Home Assistant 사이드바에서 클릭 한 번으로** 바로 꺼내 쓸 수 있게 만든 무료 앱입니다.
 
-- **Home Assistant 사이드바(Ingress) 네이티브 통합**: 별도 포트 개방이나 로그인 없이 HA 사이드바에서 바로 사용합니다.
-- **PC ↔ 모바일 설정 자동 동기화**: 즐겨찾기, 도구 숨기기, 언어 설정 및 가족 공유 클립보드가 HA `/data` 볼륨에 영속 저장됩니다.
-- **광고·추적 제로, 로컬 우선 처리**: PDF 병합/분할, 이미지 압축/EXIF 제거, 파일 체크섬, EML 뷰어 등 대부분의 도구가 브라우저 내에서 100% 로컬로 동작합니다.
-- **안전한 서버 프록시 & LAN 도구**: SSRF 방어 기반 원주소 추적·IP/DNS·SSL 인증서 진단·RSS 리더와 선택적 LAN 포트 점검/Wake-on-LAN을 지원합니다.
-- **현대적인 UI/UX**: 다크/라이트/자동 테마, 한국어/English 전환, `Ctrl+K` 빠른 검색, 도구 표시/숨기기 관리, 모바일 반응형 레이아웃을 지원합니다.
+---
 
-## 포함된 도구
+## ✨ 설치하면 이렇게 보입니다
 
-### Home Assistant 전용
-- **가족 공유 클립보드** — PC·모바일 HA 앱 간 링크와 메모 즉시 공유 및 상단 고정 (`/data/clipboard.json`)
-- **HA YAML ↔ JSON 검사기** — Home Assistant YAML 구문 검증 및 JSON 양방향 변환
-- **Cron & 스케줄 시뮬레이터** — 5필드 크론 해석, 다음 5회 실행 시각 예측, HA `time_pattern` 스니펫
-- **HA Jinja2 템플릿 모음** — 조명·배터리·시간·영역 등 실전 HA 템플릿 검색 및 원클릭 복사
-- **LAN 포트 점검 & WoL** — 내부 네트워크 기기 TCP 포트 연결 점검 및 Wake-on-LAN 매직패킷 전송
+### 한눈에 보는 메인 대시보드
+카테고리 필터, 실시간 검색(`Ctrl+K`), 즐겨찾기, 다크/라이트 모드, 한국어/영어 전환, 안 쓰는 도구 숨기기까지 깔끔하게 정리되어 있습니다.
 
-### 일반 도구
-- **PDF 병합 / 분할 / 변환** — 100% 브라우저 로컬 PDF 합치기, 페이지 추출, 이미지→PDF 변환
-- **이미지 변환 / 압축 / EXIF 제거** — 크기 조절, PNG/JPG/WebP 변환, 압축 및 GPS/카메라 EXIF 자동 제거
-- **단위 · 평수 · 날짜 계산기** — 평↔㎡·온도·길이·무게 단위 변환 및 D-Day·만나이 계산
-- **정규표현식 (Regex) 테스터** — 실시간 매칭 하이라이트, 치환, 한국어 패턴 프리셋
-- **CSV ↔ JSON & 테이블 뷰어** — CSV/TSV와 JSON 상호 변환 및 검색 가능한 표 미리보기
-- **특수문자표** — 카테고리·유니코드 검색, 원클릭 복사, 최근 사용 기록
-- **아스키아트 생성** — 텍스트 배너 & 이미지→ASCII 아트 변환
-- **GIF 생성기** — 다중 이미지 순서 편집, 프레임 딜레이·크기 조절, 로컬 GIF 제작
-- **바코드 & QR 생성기** — CODE128/EAN13/UPC 바코드 및 URL/Wi-Fi QR코드 생성
-- **웹 에디터** — Markdown 실시간 분할 미리보기, 자동 저장, `.md`/`.html` 내보내기
-- **자막 변환기 (SMI↔SRT↔VTT)** — UTF-8/EUC-KR 자동 감지 및 시간 싱크 이동(ms)
-- **글자수 세기** — 공백 포함/제외, 단어, 줄, UTF-8/EUC-KR 바이트, 읽기 시간
-- **한영타 변환기** — 두벌식 영타↔한글 양방향 실시간 변환
-- **매직아이 생성기** — 텍스트 기반 오토스테레오그램 이미지 생성 및 저장
-- **문자 음성 변환 (TTS)** — 브라우저 음성 선택, 속도/음높이 조절
-- **EML 뷰어** — `.eml` 파일 헤더, 샌드박스 HTML/텍스트 본문, 첨부파일 다운로드
-- **원주소 변환기** — 단축 URL 리다이렉트 체인 추적 (서버 프록시)
-- **IP / 네트워크 조회** — 공인 IP·위치·ISP, DNS 레코드 조회, CIDR 서브넷 계산기
-- **로또 번호 생성기** — 고정수/제외수 설정, 다중 게임 추첨, 홀짝·합계 통계
-- **화면 손전등** — 전체화면 조명, 색상 프리셋, 점멸/SOS 모드, 화면 꺼짐 방지
-- **우편번호 조회** — 대한민국 도로명/지번/영문주소 및 5자리 우편번호 검색
-- **바코드 & QR 스캐너** — 이미지 파일 업로드 스캔(HTTP 지원) 및 실시간 카메라 스캔(HTTPS)
-- **파일 체크섬 조회** — MD5, SHA-1, SHA-256, SHA-512, CRC32 계산 및 기대값 일치 검증
-- **음성 문자 변환 (STT)** — 실시간 마이크 음성 받아쓰기 (HTTPS 환경 지원)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-home.png" alt="Good Tools 메인 화면" width="100%"/>
+</p>
 
-### 개발자 도구
-- **Unix Timestamp 변환기** — 초/밀리초 자동 감지, 한국시간(KST)·UTC·ISO 8601 양방향 변환
-- **JSON 트리 & 경로 탐색기** — 접기/펼치기 트리 탐색 및 노드 클릭 시 JSONPath 복사
-- **SSL 인증서 & 보안 헤더 진단** — TLS 인증서 만료 D-Day, 발급자, HSTS/CSP 보안 헤더 점검
-- **SVG & Favicon/아이콘 생성기** — 이미지/SVG로 웹 Favicon 및 HA 애드온 `icon.png` 생성
-- **HTML 코드표** — HTML 엔티티 검색 표 & 실시간 Escape
-- **아스키 코드표** — 0부터 127까지 전체 ASCII 표(DEC/HEX/OCT/BIN) & 문자열 변환
-- **색상표 & 팔레트** — HEX/RGB/HSL 변환, WCAG AA/AAA 명암비 검사, Tailwind 팔레트
-- **이미지 ↔ Data URL** — 이미지 Base64 변환, HTML/CSS 스니펫 복사, 역변환 미리보기
-- **코드 / 문서 비교** — 줄 단위 Diff 뷰어, 공백 무시 옵션, 추가/삭제 통계
-- **코드 정렬 (Beautify)** — JSON, JS, HTML, CSS, SQL, YAML 포맷터
-- **코드 압축 (Minify)** — JSON, HTML, CSS, JS, SQL 경량화 및 절감률 표시
-- **인코딩 / JWT 디코더** — Base64, URL, Unicode, Hex 변환 및 JWT 토큰 해석
-- **UUID / ID 생성기** — UUID v4, 시간순 UUID v7, ULID, NanoID 대량 생성
-- **키보드 이벤트 검사** — `key`, `code`, `keyCode`, 조합키 상태 실시간 확인
-- **HTML 소스 & 미리보기** — 원격 URL HTML·메타/OG 태그 조회 & 실시간 HTML 샌드박스 미리보기
-- **암호화 & 보안 도구** — AES-256 암복호화, HMAC/SHA/MD5 해시, 안전한 비밀번호 생성기
+### 클릭 한 번으로 바로 쓰는 실용 도구
+예시: **바코드 & QR 생성기** — 우리 집 Wi-Fi 자동 연결 QR코드나 웹사이트 QR코드를 1초 만에 만들고 이미지로 저장할 수 있습니다.
 
-### 웹 / 피드
-- **RSS / 웹 게시글 뷰어** — CORS 없는 RSS/Atom 피드 리더 & 피드 즐겨찾기 영속 저장(`/data/feeds.json`)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-qr.png" alt="Good Tools 바코드 및 QR 생성기 화면" width="100%"/>
+</p>
 
-## 설치 방법
+---
 
-1. 위 **Add Repository** 배지를 클릭하거나, Home Assistant의 **설정 → 앱(애드온) → 앱 스토어 → 우측 상단 점 3개(⋮) → 저장소**에 아래 URL을 추가합니다.
+## 💡 왜 Good Tools를 쓰면 좋을까요?
+
+- **광고 0%, 추적 0%**: 외부 광고나 팝업 없이 쾌적하고 빠르게 동작합니다.
+- **내 집 안에서 안전하게 처리**: PDF 합치기, 사진 압축, 이메일 파일 열기 등 민감한 파일이 외부 서버로 올라가지 않고 내 기기에서 바로 처리됩니다.
+- **PC와 스마트폰이 자동 연동**: 즐겨찾기, 숨긴 도구 설정, 가족 공유 클립보드가 Home Assistant에 저장되어 PC와 휴대폰 앱 어디서 열어도 그대로 이어집니다.
+- **별도 로그인·포트 설정 불필요**: Home Assistant 사이드바에 등록해 두면 언제든 바로 열 수 있습니다.
+
+---
+
+## 🛠️ 이런 도구들이 들어 있어요
+
+### 🏠 스마트홈 · 가족 생활
+- **가족 공유 클립보드**: PC에서 복사한 링크나 메모를 휴대폰 HA 앱에서 바로 꺼내 쓰는 가족 공용 메모장
+- **원격 PC 전원 켜기 & 기기 연결 점검**: 집 안 PC를 원격으로 켜거나(Wake-on-LAN) 기기 연결 상태 확인
+- **Home Assistant 설정 도우미**: YAML 문법 검사, 예약 스케줄(Cron) 실행 시각 미리보기, 자주 쓰는 템플릿 모음
+
+### 📄 문서 · 사진 · 일상
+- **PDF 병합 / 분할 / 변환**: 여러 PDF를 하나로 합치거나 필요한 페이지만 쏙 뽑고, 사진을 PDF로 변환
+- **사진 용량 줄이기 & 위치정보 삭제**: 사진 크기 조절, 파일 형식 변환(WebP/JPG/PNG)과 함께 촬영 위치정보를 깔끔하게 제거
+- **바코드 & QR 생성기 / 스캐너**: 손님용 Wi-Fi QR코드 생성, 사진 파일이나 카메라로 QR·바코드 스캔
+- **단위 · 평수 · 날짜 계산기**: 아파트 평수↔㎡, 온도·길이·무게 변환, D-Day 및 만 나이 계산
+- **글자수 세기 & 한영타 변환기**: 자소서·문서 글자수 실시간 계산, `dkssud` → `안녕` 오타 즉시 복구
+- **우편번호 조회**: 도로명주소·지번주소·영문주소·5자리 우편번호 검색 및 원클릭 복사
+- **그 외 일상 도구**: GIF 움짤 만들기, 자막 변환(SMI↔SRT↔VTT), 특수문자·이모지표, 로또 번호 생성기, 화면 손전등(SOS), EML 이메일 뷰어, 단축 URL 원주소 확인, 글 읽어주기(TTS) / 받아쓰기(STT), 매직아이·아스키아트 생성, 웹 메모장
+
+### 💻 고급 · 업무 · 피드 도구
+- **표 & 문서 도구**: 엑셀(CSV) 표 보기·변환, 문서 차이점 비교, 패턴 찾기·마스킹(정규식), 파일 위변조 확인(체크섬)
+- **웹·네트워크 도구**: 내 공인 IP·위치 조회, 웹사이트 보안 인증서 만료일 확인, HTML 소스·미리보기, 아이콘/Favicon 만들기
+- **개발·보안 도구**: 색상표 및 가독성 검사, 코드 자동 정렬/압축, 인코딩·암호화, 안전한 비밀번호 생성기, 고유 ID(UUID) 생성기, 시간(Timestamp) 변환기
+- **RSS 뉴스·블로그 리더**: 즐겨보는 블로그나 Home Assistant 소식을 한곳에서 구독
+
+---
+
+## 🚀 1분 만에 설치하기
+
+1. 상단의 **Add Repository** 파란 버튼을 클릭하거나, Home Assistant의  
+   **설정 → 앱(애드온) → 앱 스토어 → 우측 상단 점 3개(⋮) → 저장소**에 아래 주소를 추가합니다.
    ```text
    https://github.com/redchupa/ha_good_tools
    ```
-2. 목록에서 **Good Tools**를 찾아 **설치**한 뒤 **시작**합니다.
-3. **사이드바에 표시** 옵션을 켜면 좌측 메뉴에서 바로 열 수 있습니다.
-
-## 문서
-- [앱 상세 문서 (good_tools/DOCS.md)](good_tools/DOCS.md)
-- [변경 이력 (good_tools/CHANGELOG.md)](good_tools/CHANGELOG.md)
+2. 앱 스토어 목록에서 **Good Tools**를 찾아 **설치**한 뒤 **시작**을 누릅니다.
+3. **사이드바에 표시**를 켜면 왼쪽 메뉴에서 바로 사용할 수 있습니다!
 
 ---
 
