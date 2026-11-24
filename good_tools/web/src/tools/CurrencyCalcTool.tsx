@@ -54,7 +54,8 @@ export default function CurrencyCalcTool() {
 
   const getKrwPerOne = (code: string) => {
     const def = DEFAULT_CURRENCIES.find((c) => c.code === code)!;
-    const rate = rates[code] ?? def.defaultKrwPerUnit;
+    const raw = Number(rates[code]);
+    const rate = Number.isFinite(raw) && raw > 0 ? raw : def.defaultKrwPerUnit;
     return rate / def.unit;
   };
 

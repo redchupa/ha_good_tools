@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RotateCw, Plus, X } from 'lucide-react';
 
 const PALETTE = ['#D9480F', '#1C7ED6', '#C2255C', '#2B8A3E', '#7048E8', '#0B7285', '#E67700', '#5C7CFA'];
@@ -15,6 +15,13 @@ export default function GameRouletteTool() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState('');
+  const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    };
+  }, []);
 
   const spin = () => {
     if (spinning || items.length < 2) return;
@@ -24,7 +31,7 @@ export default function GameRouletteTool() {
     const nextRot = rotation + 360 * 6 + randDeg;
     setRotation(nextRot);
 
-    setTimeout(() => {
+    spinTimerRef.current = setTimeout(() => {
       const at = (360 - (nextRot % 360)) % 360;
       const sliceAngle = 360 / items.length;
       const idx = Math.floor(at / sliceAngle) % items.length;

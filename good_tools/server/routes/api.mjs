@@ -36,11 +36,41 @@ async function readTextLimited(response, maxBytes = MAX_RESPONSE_BYTES) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = true, defaultTheme = 'system', appVersion = '1.1.0' }) {
+async function safeFetchPublic(rawUrl, headers = {}, maxHops = 5) {
+  let current = rawUrl.trim();
+  if (!/^https?:\/\//i.test(current)) current = `https://${current}`;
+
+  for (let hop = 0; hop <= maxHops; hop++) {
+    const safeUrl = await assertSafePublicUrl(current);
+    const response = await fetch(safeUrl.toString(), {
+      method: 'GET',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      headers: { 'User-Agent': USER_AGENT, ...headers },
+    });
+
+    if (response.status >= 300 && response.status < 400) {
+      const loc = response.headers.get('location');
+      try { await response.body?.cancel(); } catch {}
+      if (!loc) return { response, finalUrl: safeUrl.toString() };
+      if (hop === maxHops) throw new Error('리다이렉트 횟수 제한을 초과했습니다.');
+      current = new URL(loc, safeUrl).toString();
+      continue;
+    }
+
+    return { response, finalUrl: safeUrl.toString() };
+  }
+  throw new Error('요청을 처리할 수 없습니다.');
+}
+
+const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = true, defaultTheme = 'system', appVersion = '1.3.2' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
   const prefsFile = path.join(dataDir, 'prefs.json');
+  const writeQueues = new Map();
   const rssParser = new Parser({
     timeout: FETCH_TIMEOUT_MS,
     headers: { 'User-Agent': USER_AGENT, Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' },
@@ -73,9 +103,18 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     }
   }
 
-  async function writeJsonFile(filePath, data) {
-    await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  function writeJsonFile(filePath, data) {
+    const prev = writeQueues.get(filePath) || Promise.resolve();
+    const next = prev
+      .catch(() => {})
+      .then(async () => {
+        await fs.mkdir(dataDir, { recursive: true });
+        const tmpPath = `${filePath}.${crypto.randomUUID().slice(0, 8)}.tmp`;
+        await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+        await fs.rename(tmpPath, filePath);
+      });
+    writeQueues.set(filePath, next);
+    return next;
   }
 
   async function loadFeeds() {
@@ -249,22 +288,15 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   });
 
   // 4. Remote HTML Source Viewer (htmlViewer)
-  router.post('/fetch-html', requireNetworkEnabled, async (req, res) => {
+  router.post('/fetch-html', requireNetworkEnabled, asyncRoute(async (req, res) => {
     const { url } = req.body || {};
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: '가져올 URL을 입력해 주세요.' });
     }
 
     try {
-      let target = url.trim();
-      if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
-      const safeUrl = await assertSafePublicUrl(target);
-
-      const response = await fetch(safeUrl.toString(), {
-        method: 'GET',
-        redirect: 'follow',
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,text/plain,*/*' },
+      const { response, finalUrl } = await safeFetchPublic(url, {
+        Accept: 'text/html,application/xhtml+xml,text/plain,*/*',
       });
 
       const html = await readTextLimited(response, MAX_RESPONSE_BYTES);
@@ -285,7 +317,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       }
 
       return res.json({
-        url: response.url || safeUrl.toString(),
+        url: finalUrl,
         status: response.status,
         headers,
         meta,
@@ -295,23 +327,18 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       return res.status(400).json({ error: err.message || 'HTML을 가져오는 중 오류가 발생했습니다.' });
     }
-  });
+  }));
 
   // 5. RSS/Atom Feed Reader (scrapper)
-  router.post('/rss', requireNetworkEnabled, async (req, res) => {
+  router.post('/rss', requireNetworkEnabled, asyncRoute(async (req, res) => {
     const { url } = req.body || {};
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: 'RSS/Atom 피드 URL을 입력해 주세요.' });
     }
 
     try {
-      let target = url.trim();
-      if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
-      const safeUrl = await assertSafePublicUrl(target);
-
-      const response = await fetch(safeUrl.toString(), {
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { 'User-Agent': USER_AGENT, Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*' },
+      const { response, finalUrl } = await safeFetchPublic(url, {
+        Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
       });
       if (!response.ok) {
         throw new Error(`피드 서버 응답 오류 (HTTP ${response.status})`);
@@ -319,11 +346,12 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
 
       const xml = await readTextLimited(response, MAX_RESPONSE_BYTES);
       const feed = await rssParser.parseString(xml);
+      const parsedFinal = new URL(finalUrl);
 
       return res.json({
-        title: feed.title || safeUrl.hostname,
+        title: feed.title || parsedFinal.hostname,
         description: feed.description || '',
-        link: feed.link || safeUrl.toString(),
+        link: feed.link || finalUrl,
         items: (feed.items || []).slice(0, 50).map((item) => ({
           title: item.title || '(제목 없음)',
           link: item.link || '',
@@ -336,7 +364,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       return res.status(400).json({ error: err.message || 'RSS 피드 파싱 중 오류가 발생했습니다.' });
     }
-  });
+  }));
 
   // Saved RSS Feeds CRUD
   router.get('/feeds', async (_req, res) => {

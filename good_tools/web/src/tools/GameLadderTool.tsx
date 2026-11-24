@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { RefreshCw, Play, Users } from 'lucide-react';
 
 const PALETTE = ['#D9480F', '#1C7ED6', '#C2255C', '#2B8A3E', '#7048E8', '#0B7285', '#E67700', '#5C7CFA'];
@@ -61,6 +61,8 @@ export default function GameLadderTool() {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
   };
+
+  useEffect(() => () => clearTimers(), []);
 
   const makeNew = (nextN = n, nextK = k) => {
     clearTimers();

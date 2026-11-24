@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2 (2026-11-24)
+
+- **보안·안정성 강화**: 원격 HTML/RSS 조회 시 리다이렉트 전 단계 SSRF 검증, JSON 설정 파일 원자적(atomic) 직렬 저장, Markdown 웹 에디터 샌드박스 iframe 격리(XSS 차단), 도구별 ErrorBoundary 및 타이머 정리 적용.
+
 ## 1.3.1 (2026-11-24)
 
 **Good Tools 정식 출시**

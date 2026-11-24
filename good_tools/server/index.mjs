@@ -58,6 +58,14 @@ export function createApp(options = {}) {
     });
   }
 
+  // Global error handler (prevents crashes on unexpected Express/JSON errors)
+  app.use((err, _req, res, _next) => {
+    console.error('[Good Tools] Unhandled error:', err?.message || err);
+    if (!res.headersSent) {
+      res.status(err?.status || 500).json({ error: '서버 요청 처리 중 오류가 발생했습니다.' });
+    }
+  });
+
   return app;
 }
 

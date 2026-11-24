@@ -84,9 +84,11 @@ export default function WebEditorTool() {
           className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-sm outline-none focus:border-indigo-500 resize-y"
           placeholder="Markdown을 입력하세요..."
         />
-        <div
-          className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950/60 overflow-y-auto max-h-[460px] prose prose-sm dark:prose-invert max-w-none [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-400 [&_blockquote]:pl-3 [&_blockquote]:text-slate-500 [&_code]:bg-slate-100 [&_code]:dark:bg-slate-800 [&_code]:px-1 [&_code]:rounded"
-          dangerouslySetInnerHTML={{ __html: html }}
+        <iframe
+          title="Markdown Preview"
+          sandbox=""
+          srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,-apple-system,sans-serif;padding:16px;margin:0;color:#0f172a;line-height:1.6;font-size:14px}h1{font-size:1.4em;margin-top:0}h2{font-size:1.15em;margin-top:1.2em}pre,code{background:#f1f5f9;border-radius:6px;font-family:monospace}code{padding:2px 5px}pre{padding:10px;overflow:auto}blockquote{border-left:4px solid #6366f1;margin:0;padding-left:12px;color:#475569}</style></head><body>${html}</body></html>`}
+          className="w-full h-[460px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white"
         />
       </div>
     </div>

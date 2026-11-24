@@ -19,7 +19,9 @@ export default function RegexTesterTool() {
     try {
       const safeFlags = flags.includes('g') ? flags : flags + 'g';
       const re = new RegExp(pattern, safeFlags);
-      const found = Array.from(text.matchAll(re)).map((m) => ({ value: m[0], index: m.index ?? 0 }));
+      const found = Array.from(text.matchAll(re))
+        .slice(0, 200)
+        .map((m) => ({ value: m[0], index: m.index ?? 0 }));
       const rep = text.replace(new RegExp(pattern, flags), replaceWith);
       return { matches: found, replaced: rep, error: '' };
     } catch (e) {

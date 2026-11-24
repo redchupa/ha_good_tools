@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Routes, Route, useParams, Link } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToolShell } from './components/ToolShell';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { HomePage } from './pages/HomePage';
 import { getToolById } from './data/tools';
 import { useTheme, useSyncedPrefs } from './hooks/usePreferences';
@@ -96,9 +97,11 @@ function ToolRoute({
       isFavorite={favorites.includes(tool.id)}
       onToggleFavorite={() => toggleFavorite(tool.id)}
     >
-      <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">도구를 불러오는 중...</div>}>
-        <Component />
-      </Suspense>
+      <ErrorBoundary resetKey={tool.id}>
+        <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">도구를 불러오는 중...</div>}>
+          <Component />
+        </Suspense>
+      </ErrorBoundary>
     </ToolShell>
   );
 }
