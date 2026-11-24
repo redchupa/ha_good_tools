@@ -1,3 +1,4 @@
+import { useHaCapabilities } from '../components/HaIntegration';
 import { useEffect, useState } from 'react';
 import { Pin, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -12,6 +13,14 @@ interface ClipItem {
 }
 
 export default function SharedClipboardTool() {
+  const caps = useHaCapabilities();
+  const [notification, setNotification] = useState('');
+  const sendNotification = async (message: string) => {
+    try {
+      const r = await fetch('./api/ha/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
+      setNotification(r.ok ? '전송됨 / Sent' : '전송 실패 / Check permission and message length.');
+    } catch { setNotification('연결 실패 / Retry when connected.'); }
+  };
   const [items, setItems] = useState<ClipItem[]>([]);
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
@@ -72,6 +81,7 @@ export default function SharedClipboardTool() {
 
   return (
     <div className="space-y-5">
+      {notification && <p role="status">{notification}</p>}
       <form onSubmit={addItem} className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input
@@ -139,6 +149,7 @@ export default function SharedClipboardTool() {
                   <span className="text-[11px] text-slate-400">{new Date(it.createdAt).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-1">
+                  {caps?.notify && <button onClick={() => sendNotification(it.content)}>알림 전송 / Notify</button>}
                   <CopyButton text={it.content} />
                   <button
                     type="button"

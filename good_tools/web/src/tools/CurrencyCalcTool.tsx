@@ -43,6 +43,40 @@ export default function CurrencyCalcTool() {
     }
   });
 
+  const [sources, setSources] = useState<Record<string,string>>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY + '_sources') || '{}') || {}; } catch { return {}; }
+  });
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch('./api/exchange-rates');
+      if (!r.ok) throw Error();
+      const feed = await r.json();
+      const values: Record<string,number> = {};
+      const labels: Record<string,string> = {};
+      for (const c of DEFAULT_CURRENCIES) {
+        const rate = feed.rates[c.code];
+        if (Number.isFinite(rate) && rate > 0) {
+          values[c.code] = c.unit / rate;
+          labels[c.code] = feed.source + ' · ' + feed.date;
+        }
+      }
+      setRates(prev=>({...prev,...values}));
+      setSources(prev=>({...prev,...labels}));
+      setStatus('환율 갱신 완료 / Updated');
+    } catch { setStatus('갱신 실패 · 저장된 환율 사용 / Using cached rates'); }
+    finally { setLoading(false); }
+  };
+  const edit = (code:string, value:string) => {
+    const n = Number(value);
+    if (n > 0 && Number.isFinite(n)) {
+      setRates(prev=>({...prev,[code]:n}));
+      setSources(prev=>({...prev,[code]:'사용자 입력 / Manual · ' + new Date().toLocaleDateString()}));
+    }
+  };
+  const describe = (code:string) => sources[code] || (rates[code] === DEFAULT_CURRENCIES.find(c=>c.code===code)?.defaultKrwPerUnit ? '예시 / Example' : '저장값 / Saved');
   const [fromCode, setFromCode] = useState('USD');
   const [toCode, setToCode] = useState('KRW');
   const [amount, setAmount] = useState('100');
@@ -50,7 +84,8 @@ export default function CurrencyCalcTool() {
 
   useEffect(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(rates));
-  }, [rates]);
+    localStorage.setItem(LS_KEY + '_sources',JSON.stringify(sources));
+  }, [rates,sources]);
 
   const getKrwPerOne = (code: string) => {
     const def = DEFAULT_CURRENCIES.find((c) => c.code === code)!;
@@ -73,7 +108,7 @@ export default function CurrencyCalcTool() {
 
   const resetDefaults = () => {
     const base = Object.fromEntries(DEFAULT_CURRENCIES.map((c) => [c.code, c.defaultKrwPerUnit]));
-    setRates(base);
+    setRates(base); setSources({});
   };
 
   const fmt = (val: number, code: string) =>
@@ -100,11 +135,13 @@ export default function CurrencyCalcTool() {
             onClick={resetDefaults}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> 2026 평균값 복원
+            <RotateCcw className="w-3.5 h-3.5" /> 예시값 복원
           </button>
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-3 text-sm"><button disabled={loading} onClick={refresh}>기준 환율 갱신 / Refresh</button>
+        <span>{fromCode} · {describe(fromCode)} / {toCode} · {describe(toCode)}</span><span role="status">{status}</span></div>
       {/* Main 1:1 Converter */}
       <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
@@ -174,7 +211,7 @@ export default function CurrencyCalcTool() {
               type="number"
               step="0.1"
               value={rates[fromCode]}
-              onChange={(e) => setRates((r) => ({ ...r, [fromCode]: Math.max(0.0001, parseFloat(e.target.value) || 0) }))}
+              onChange={(e) => edit(fromCode,e.target.value)}
               className="w-28 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-semibold"
             />
             <span>원</span>
@@ -200,7 +237,7 @@ export default function CurrencyCalcTool() {
                     step="0.1"
                     value={rates[c.code]}
                     onChange={(e) =>
-                      setRates((prev) => ({ ...prev, [c.code]: Math.max(0.0001, parseFloat(e.target.value) || 0) }))
+                      edit(c.code,e.target.value)
                     }
                     className="w-24 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-right"
                   />

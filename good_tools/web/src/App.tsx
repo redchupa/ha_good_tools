@@ -1,3 +1,4 @@
+import { Language } from './hooks/language';
 import { Suspense, lazy } from 'react';
 import { Routes, Route, useParams, Link } from 'react-router-dom';
 import { Layout } from './components/Layout';
@@ -70,9 +71,11 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
 };
 
 function ToolRoute({
+  lang,
   favorites,
   toggleFavorite,
 }: {
+  lang: 'ko' | 'en';
   favorites: string[];
   toggleFavorite: (id: string) => void;
 }) {
@@ -92,7 +95,7 @@ function ToolRoute({
   }
 
   return (
-    <ToolShell
+    <ToolShell lang={lang}
       tool={tool}
       isFavorite={favorites.includes(tool.id)}
       onToggleFavorite={() => toggleFavorite(tool.id)}
@@ -111,7 +114,7 @@ export default function App() {
   const { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang } = useSyncedPrefs();
 
   return (
-    <Layout
+    <Language.Provider value={lang}><Layout
       theme={theme}
       setTheme={setTheme}
       favorites={favorites}
@@ -134,7 +137,7 @@ export default function App() {
         />
         <Route
           path="/tool/:id"
-          element={<ToolRoute favorites={favorites} toggleFavorite={toggleFavorite} />}
+          element={<ToolRoute lang={lang} favorites={favorites} toggleFavorite={toggleFavorite} />}
         />
         <Route
           path="*"
@@ -148,6 +151,6 @@ export default function App() {
           }
         />
       </Routes>
-    </Layout>
+    </Layout></Language.Provider>
   );
 }

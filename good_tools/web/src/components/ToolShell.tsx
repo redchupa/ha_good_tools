@@ -1,16 +1,23 @@
+import { useEffect } from 'react';
+import { rememberTool, shareTool } from '../utils/toolNavigation';
+import { CopyButton } from './CopyButton';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Star, Wifi, ShieldAlert } from 'lucide-react';
 import type { ToolMeta } from '../data/tools';
 import { ToolIcon } from './ToolIcon';
 
 interface ToolShellProps {
+  lang: 'ko' | 'en';
   tool: ToolMeta;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   children: React.ReactNode;
 }
 
-export function ToolShell({ tool, isFavorite, onToggleFavorite, children }: ToolShellProps) {
+export function ToolShell({ lang, tool, isFavorite, onToggleFavorite, children }: ToolShellProps) {
+  useEffect(() => { rememberTool(tool.id); }, [tool.id]);
+  const en = lang === 'en';
+  const link = shareTool(tool.id);
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -18,7 +25,7 @@ export function ToolShell({ tool, isFavorite, onToggleFavorite, children }: Tool
           <Link
             to="/"
             className="mt-0.5 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="대시보드로 돌아가기"
+            title={en ? 'Back to dashboard' : '대시보드로 돌아가기'}
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -28,23 +35,24 @@ export function ToolShell({ tool, isFavorite, onToggleFavorite, children }: Tool
                 <ToolIcon name={tool.icon} className="w-4 h-4" />
               </span>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {tool.name}
+                {en ? tool.nameEn || tool.name : tool.name}
               </h1>
               {tool.badge === 'network' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300">
-                  <Wifi className="w-3 h-3" /> 서버 프록시
+                  <Wifi className="w-3 h-3" /> {en ? 'Server proxy' : '서버 프록시'}
                 </span>
               )}
               {tool.badge === 'https' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                  <ShieldAlert className="w-3 h-3" /> HTTPS 권장
+                  <ShieldAlert className="w-3 h-3" /> {en ? 'HTTPS recommended' : 'HTTPS 권장'}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{tool.shortDesc}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{en ? tool.shortDescEn || tool.shortDesc : tool.shortDesc}</p>
           </div>
         </div>
 
+        {link && <CopyButton text={link} label={en ? "Copy tool link" : "도구 링크 복사"} />}
         <button
           type="button"
           onClick={onToggleFavorite}
@@ -55,7 +63,7 @@ export function ToolShell({ tool, isFavorite, onToggleFavorite, children }: Tool
           }`}
         >
           <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
-          <span>{isFavorite ? '즐겨찾기됨' : '즐겨찾기'}</span>
+          <span>{isFavorite ? (en ? 'Favorited' : '즐겨찾기됨') : (en ? 'Favorite' : '즐겨찾기')}</span>
         </button>
       </div>
 

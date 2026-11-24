@@ -1,3 +1,4 @@
+import { HaIntegration } from '../components/HaIntegration';
 import { useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
@@ -58,6 +59,7 @@ export default function HaJinjaTool() {
 
   return (
     <div className="space-y-4">
+      <HaIntegration evaluate />
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={search}

@@ -1,3 +1,4 @@
+import { HaIntegration } from '../components/HaIntegration';
 import { useState } from 'react';
 import yaml from 'js-yaml';
 import { CheckCircle2, XCircle, ArrowRightLeft } from 'lucide-react';
@@ -48,6 +49,7 @@ export default function HaYamlJsonTool() {
 
   return (
     <div className="space-y-4">
+      <HaIntegration />
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

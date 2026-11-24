@@ -5,6 +5,9 @@ ALLOW_NETWORK_TOOLS=$(bashio::config 'allow_network_tools' 'true')
 ALLOW_LAN_TOOLS=$(bashio::config 'allow_lan_tools' 'false')
 DEFAULT_THEME=$(bashio::config 'default_theme' 'system')
 
+export HA_USER_IDS="$(bashio::config 'ha_user_ids')"
+export ALLOW_TEMPLATE_EVAL="$(bashio::config 'allow_template_eval')"
+export HA_NOTIFY_SERVICE="$(bashio::config 'notify_service')"
 export INGRESS_ONLY=true
 export PORT=8099
 export HOST="0.0.0.0"
@@ -14,7 +17,7 @@ export LOG_LEVEL="${LOG_LEVEL}"
 export ALLOW_NETWORK_TOOLS="${ALLOW_NETWORK_TOOLS}"
 export ALLOW_LAN_TOOLS="${ALLOW_LAN_TOOLS}"
 export DEFAULT_THEME="${DEFAULT_THEME}"
-export APP_VERSION="1.3.3"
+export APP_VERSION="1.4.0"
 
 bashio::log.info "Starting Good Tools v${APP_VERSION}..."
 bashio::log.info "  Log level: ${LOG_LEVEL}"

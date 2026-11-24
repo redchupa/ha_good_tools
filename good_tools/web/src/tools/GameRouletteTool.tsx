@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useEffect, useRef, useState } from 'react';
 import { RotateCw, Plus, X } from 'lucide-react';
 
@@ -10,7 +11,14 @@ const PRESETS: Record<string, string[]> = {
 };
 
 export default function GameRouletteTool() {
-  const [items, setItems] = useState<string[]>(PRESETS['점심 메뉴']);
+  const t = useText();
+  const [items, setItems] = useState<string[]>(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem('good_tools_roulette') || 'null');
+      if (Array.isArray(list) && list.length <= 12 && list.every(x => typeof x === 'string' && x.length <= 14)) return list;
+    } catch { /* Restore the preset if local storage is unavailable. */ }
+    return PRESETS['점심 메뉴'];
+  });
   const [newItem, setNewItem] = useState('');
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -23,6 +31,10 @@ export default function GameRouletteTool() {
     };
   }, []);
 
+  useEffect(() => {
+    try { localStorage.setItem('good_tools_roulette', JSON.stringify(items)); } catch {}
+  }, [items]);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const spin = () => {
     if (spinning || items.length < 2) return;
     setSpinning(true);
@@ -37,7 +49,7 @@ export default function GameRouletteTool() {
       const idx = Math.floor(at / sliceAngle) % items.length;
       setWinner(items[idx]);
       setSpinning(false);
-    }, 4500);
+    }, reduced ? 0 : 4500);
   };
 
   const addItem = (e: React.FormEvent) => {
@@ -67,7 +79,7 @@ export default function GameRouletteTool() {
               style={{
                 transformOrigin: '200px 200px',
                 transform: `rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 4.4s cubic-bezier(.12,.68,.08,1)' : 'none',
+                transition: spinning && !reduced ? 'transform 4.4s cubic-bezier(.12,.68,.08,1)' : 'none',
               }}
             >
               {items.map((label, i) => {
@@ -107,13 +119,13 @@ export default function GameRouletteTool() {
 
         <div className="text-center min-h-[44px]">
           {spinning ? (
-            <div className="text-sm font-semibold text-indigo-500 animate-pulse">두근두근 돌아가는 중...</div>
+            <div className="text-sm font-semibold text-indigo-500 animate-pulse">{t('두근두근 돌아가는 중...','Spinning…')}</div>
           ) : winner ? (
             <div className="px-5 py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-300 dark:border-indigo-500/40 text-lg font-extrabold text-indigo-700 dark:text-indigo-300">
               당첨: {winner}
             </div>
           ) : (
-            <div className="text-xs text-slate-400">돌리기 버튼을 눌러 오늘의 선택을 뽑아보세요</div>
+            <div className="text-xs text-slate-400">{t('돌리기 버튼을 눌러 오늘의 선택을 뽑아보세요','Spin to pick an item.')}</div>
           )}
         </div>
 
@@ -124,7 +136,7 @@ export default function GameRouletteTool() {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm disabled:opacity-40 cursor-pointer"
         >
           <RotateCw className={`w-4 h-4 ${spinning ? 'animate-spin' : ''}`} />
-          {spinning ? '돌리는 중...' : winner ? '다시 돌리기' : '돌림판 돌리기'}
+          {spinning ? t('돌리는 중...','Spinning…') : winner ? t('다시 돌리기','Spin again') : t('돌림판 돌리기','Spin')}
         </button>
       </div>
 

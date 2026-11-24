@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import CryptoJS from 'crypto-js';
+import { useText } from '../hooks/language';
+import { useEffect, useRef, useState } from 'react';
 import { Upload, CheckCircle2, XCircle } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
-import { crc32 } from '../utils/helpers';
 
 interface HashSet {
   md5: string;
@@ -12,48 +11,43 @@ interface HashSet {
   crc32: string;
 }
 
-function computeHashesFromBytes(bytes: Uint8Array): HashSet {
-  const words: number[] = [];
-  for (let i = 0; i < bytes.length; i++) {
-    words[i >>> 2] |= bytes[i] << (24 - (i % 4) * 8);
-  }
-  const wa = CryptoJS.lib.WordArray.create(words, bytes.length);
-  return {
-    md5: CryptoJS.MD5(wa).toString(),
-    sha1: CryptoJS.SHA1(wa).toString(),
-    sha256: CryptoJS.SHA256(wa).toString(),
-    sha512: CryptoJS.SHA512(wa).toString(),
-    crc32: crc32(bytes),
-  };
-}
-
 export default function FileChecksumTool() {
+  const t = useText();
   const [sourceLabel, setSourceLabel] = useState('');
   const [textInput, setTextInput] = useState('');
   const [hashes, setHashes] = useState<HashSet | null>(null);
   const [expected, setExpected] = useState('');
 
-  const handleFile = async (file: File) => {
-    if (file.size > 8 * 1024 * 1024) {
-      setHashes(null);
-      setSourceLabel('파일 체크섬은 8 MiB까지 지원합니다.');
-      return;
-    }
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    setSourceLabel(`${file.name} (${file.size.toLocaleString()} bytes)`);
-    setHashes(computeHashesFromBytes(bytes));
+  const task = useRef<Worker | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  useEffect(() => () => task.current?.terminate(), []);
+  const stop = () => {
+    task.current?.terminate();
+    task.current = null;
+    setProgress(null);
   };
-
+  const calculate = (blob: Blob, label: string) => {
+    stop();
+    setSourceLabel(label);
+    setHashes(null);
+    setProgress(0);
+    const worker = new Worker(new URL('../utils/checksum.worker.ts', import.meta.url), { type: 'module' });
+    task.current = worker;
+    const fail = () => { stop(); setSourceLabel(t('읽기에 실패했습니다. 파일을 다시 선택해 주세요.','Could not read the file. Choose it again.')); };
+    worker.onerror = fail;
+    worker.onmessage = ({ data }) => {
+      if (task.current !== worker) return;
+      if (data.error) return fail();
+      if (data.result) { setHashes(data.result); stop(); }
+      else setProgress(data.progress);
+    };
+    worker.postMessage(blob);
+  };
+  const handleFile = (file: File) => calculate(file, file.name);
   const handleText = (val: string) => {
     setTextInput(val);
-    if (!val) {
-      setHashes(null);
-      setSourceLabel('');
-      return;
-    }
-    const bytes = new TextEncoder().encode(val);
-    setSourceLabel(`텍스트 입력 (${bytes.length} bytes)`);
-    setHashes(computeHashesFromBytes(bytes));
+    if (val) calculate(new Blob([val]), 'Text');
+    else { stop(); setSourceLabel(''); setHashes(null); }
   };
 
   const normExpected = expected.trim().toLowerCase();
@@ -66,8 +60,8 @@ export default function FileChecksumTool() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
           <Upload className="w-6 h-6 text-indigo-500" />
-          <span className="text-sm font-medium">파일 선택 (로컬 계산)</span>
-          <span className="text-xs text-slate-400">업로드 없이 브라우저에서 즉시 해시 계산</span>
+          <span className="text-sm font-medium">{t('파일 선택 (로컬 계산)','Choose a file')}</span>
+          <span className="text-xs text-slate-400">{t('업로드 없이 브라우저에서 즉시 해시 계산','Files are processed on this device.')}</span>
           <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
         </label>
 
@@ -101,6 +95,7 @@ export default function FileChecksumTool() {
         )}
       </div>
 
+      {progress !== null && <div><progress max={100} value={progress} /> {progress}% <button onClick={() => { stop(); setSourceLabel(t('취소됨','Cancelled')); }}>{t('취소','Cancel')}</button></div>}
       {!hashes && sourceLabel && <p role="status">{sourceLabel}</p>}
       {hashes && (
         <div className="space-y-2">

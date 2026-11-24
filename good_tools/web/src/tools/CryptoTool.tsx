@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import CryptoJS from 'crypto-js';
+import { useText } from '../hooks/language';
+import { useEffect, useState } from 'react';
+import { encrypt, decrypt, textHashes } from '../utils/secureCrypto';
 import { RefreshCw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
 
 export default function CryptoTool() {
+  const t = useText();
   const [tab, setTab] = useState<'aes' | 'hmac' | 'password'>('aes');
   const [text, setText] = useState('Home Assistant Secret Payload');
   const [secret, setSecret] = useState('');
@@ -14,24 +16,24 @@ export default function CryptoTool() {
   const [pwSymbols, setPwSymbols] = useState(true);
   const [password, setPassword] = useState('');
 
-  const encryptAes = () => {
-    setError('');
-    if (!secret) return setError('암호화 키를 입력해 주세요.');
-    setOutput(CryptoJS.AES.encrypt(text, secret).toString());
-  };
-
-  const decryptAes = () => {
-    setError('');
-    try {
-      const bytes = CryptoJS.AES.decrypt(text.trim(), secret);
-      const plain = bytes.toString(CryptoJS.enc.Utf8);
-      if (!plain) throw new Error('복호화에 실패했습니다. 키 또는 암호문을 확인해 주세요.');
-      setOutput(plain);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '복호화 오류');
+  const [rows, setRows] = useState<string[][]>([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (tab === 'hmac') {
+      setRows([]);
+      setError('');
+      textHashes(text, secret).then(v => { if (active) setRows(v); })
+        .catch(e => { if (active) setError(String(e.message)); });
     }
+    return () => { active = false; };
+  }, [tab, text, secret]);
+  const transform = async (mode: 'encrypt' | 'decrypt') => {
+    setError(''); setOutput(''); setBusy(true);
+    try { setOutput(await (mode === 'encrypt' ? encrypt(text,secret) : decrypt(text.trim(),secret))); }
+    catch (e) { setError(e instanceof Error ? e.message : '암호 문구와 입력을 확인해 주세요.'); }
+    finally { setBusy(false); }
   };
-
   const genPassword = () => {
     const chars =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' +
@@ -46,9 +48,9 @@ export default function CryptoTool() {
       <div className="flex gap-2">
         {(
           [
-            ['aes', 'AES-256 암복호화'],
-            ['hmac', 'HMAC / SHA 해시'],
-            ['password', '보안 비밀번호 생성기'],
+            ['aes', t('AES-256 암복호화','AES-256 encryption')],
+            ['hmac', t('HMAC / SHA 해시','HMAC / SHA hashes')],
+            ['password', t('보안 비밀번호 생성기','Password generator')],
           ] as const
         ).map(([t, label]) => (
           <button
@@ -84,10 +86,10 @@ export default function CryptoTool() {
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
           <div className="flex gap-2">
-            <button type="button" onClick={encryptAes} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium cursor-pointer">
+            <button type="button" disabled={busy} onClick={() => transform('encrypt')} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium cursor-pointer">
               AES 암호화
             </button>
-            <button type="button" onClick={decryptAes} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium cursor-pointer">
+            <button type="button" disabled={busy} onClick={() => transform('decrypt')} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium cursor-pointer">
               AES 복호화
             </button>
             <CopyButton text={output} className="ml-auto" />
@@ -118,12 +120,8 @@ export default function CryptoTool() {
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
           <div className="space-y-2">
-            {[
-              ['HMAC-SHA256', CryptoJS.HmacSHA256(text, secret).toString()],
-              ['HMAC-SHA512', CryptoJS.HmacSHA512(text, secret).toString()],
-              ['SHA-256', CryptoJS.SHA256(text).toString()],
-              ['MD5', CryptoJS.MD5(text).toString()],
-            ].map(([name, val]) => (
+            {error && <p role="alert">{error}</p>}
+            {rows.map(([name, val]) => (
               <div key={name} className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
                 <div className="min-w-0">
                   <div className="font-bold text-indigo-600 dark:text-indigo-400">{name}</div>

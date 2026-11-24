@@ -74,7 +74,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.3.3' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.4.0' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
@@ -272,6 +272,16 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       publicInfo,
       fetchedAt: new Date().toISOString(),
     });
+  }));
+
+  router.get('/exchange-rates', requireNetworkEnabled, boundedRoute(publicBudget, async (_req, res) => {
+    try {
+      const { response } = await safeFetchPublic('https://api.frankfurter.dev/v1/latest?base=KRW');
+      if (!response.ok) { await response.body?.cancel(); throw Error(); }
+      const { base, date, rates } = JSON.parse(await readTextLimited(response, 16384));
+      if (base !== 'KRW' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !rates?.USD) throw Error();
+      res.json({ date, rates, source: 'Frankfurter / ECB' });
+    } catch { res.status(502).json({ error: '환율 조회 실패 / Could not refresh rates.' }); }
   }));
 
   // 3. DNS Lookup (ipconfig)

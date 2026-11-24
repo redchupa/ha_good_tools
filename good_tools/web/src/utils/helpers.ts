@@ -8,12 +8,15 @@ for (let i = 0; i < 256; i++) {
   CRC_TABLE[i] = c >>> 0;
 }
 
-export function crc32(bytes: Uint8Array): string {
-  let crc = 0xffffffff;
+export function updateCrc32(crc: number, bytes: Uint8Array) {
   for (let i = 0; i < bytes.length; i++) {
     crc = CRC_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
   }
-  return ((crc ^ 0xffffffff) >>> 0).toString(16).padStart(8, '0');
+  return crc;
+}
+
+export function crc32(bytes: Uint8Array): string {
+  return ((updateCrc32(0xffffffff, bytes) ^ 0xffffffff) >>> 0).toString(16).padStart(8, '0');
 }
 
 export function calculateSubnet(ipStr: string, prefix: number) {

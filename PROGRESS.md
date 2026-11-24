@@ -7,6 +7,10 @@
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (**주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
 
+## v1.4.0 제품 개선
+
+서브 HA에서 백엔드 12개, 프론트엔드 13개 테스트 및 TypeScript·Vite 빌드를 확인했습니다. 같은 장비의 Chromium에서 체크섬 벡터·50 MiB 파일 취소·PDF 추출·최근 도구·룰렛 상태를 검증했습니다. 실제 iPhone 및 Android Companion 하드웨어 검증은 후속 항목입니다.
+
 ## v1.3.3 품질·보안 감사
 
 - SSRF·TLS 연결, Ingress 및 LAN 요청 제한, 공유 파일 트랜잭션, 비동기 예외 처리, 정규식·CSV·크론, Blob URL 및 장치 리소스 수명, Docker 빌드와 의존성을 수정했습니다.

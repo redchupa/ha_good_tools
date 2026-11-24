@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 
@@ -35,7 +36,8 @@ interface CopyButtonProps {
   className?: string;
 }
 
-export function CopyButton({ text, label = '복사', size = 'sm', className = '' }: CopyButtonProps) {
+export function CopyButton({ text, label, size = 'sm', className = '' }: CopyButtonProps) {
+  const t = useText();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -60,7 +62,7 @@ export function CopyButton({ text, label = '복사', size = 'sm', className = ''
       } ${className}`}
     >
       {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-      <span>{copied ? '복사됨' : label}</span>
+      <span>{copied ? t('복사됨','Copied') : label || t('복사','Copy')}</span>
     </button>
   );
 }

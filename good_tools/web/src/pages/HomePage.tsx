@@ -1,3 +1,4 @@
+import { recentTools } from '../utils/toolNavigation';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Star, Wifi, ShieldAlert, Radio } from 'lucide-react';
@@ -18,6 +19,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
 
   const visibleBase = TOOLS.filter((t) => !hiddenTools.includes(t.id));
 
+  const recent = recentTools().map(id => visibleBase.find(t => t.id === id)).filter(t => !!t);
   const filtered = visibleBase.filter((t) => {
     if (category !== 'all' && t.category !== category) return false;
     if (!search.trim()) return true;
@@ -64,6 +66,14 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
         </div>
       </div>
 
+      {recent.length > 0 && !search && category === 'all' && (
+        <section className="space-y-2">
+          <h2 className="font-semibold">{lang === 'en' ? 'Recently used' : '최근 사용한 도구'}</h2>
+          <div className="flex flex-wrap gap-2">{recent.map(t =>
+            <Link key={t.id} to={'/tool/' + t.id} className="rounded-lg border px-3 py-2 text-sm">{tName(t)}</Link>
+          )}</div>
+        </section>
+      )}
       {favoriteTools.length > 0 && !search.trim() && category === 'all' && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">

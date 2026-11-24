@@ -1,3 +1,4 @@
+import { haRouter } from './routes/ha.mjs';
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -15,7 +16,7 @@ export function createApp(options = {}) {
   const allowLanTools =
     options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS === 'true');
   const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
-  const appVersion = options.appVersion || process.env.APP_VERSION || '1.3.3';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.4.0';
 
   const app = express();
   app.disable('x-powered-by');
@@ -34,6 +35,7 @@ export function createApp(options = {}) {
     next();
   });
 
+  app.use('/api/ha', haRouter());
   app.use('/api', createApiRouter({ dataDir, allowNetworkTools, allowLanTools, defaultTheme, appVersion }));
 
   // Serve static SPA assets (never cache index.html so HA app updates appear immediately)
