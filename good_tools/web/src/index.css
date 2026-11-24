@@ -12,6 +12,104 @@
   }
 }
 
+/* Default Hero Banner (system / light / dark) */
+.hero-banner {
+  background-image: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #06b6d4 100%);
+}
+
+/* Theme: HA Blue (Home Assistant Official Sky/Cyan Light) */
+:root[data-theme="ha-blue"] {
+  --color-slate-50: #f0f9ff;
+  --color-slate-100: #e0f2fe;
+  --color-slate-200: #bae6fd;
+  --color-indigo-50: #e0f2fe;
+  --color-indigo-100: #bae6fd;
+  --color-indigo-400: #38bdf8;
+  --color-indigo-500: #0ea5e9;
+  --color-indigo-600: #0284c7;
+  --color-indigo-700: #0369a1;
+}
+:root[data-theme="ha-blue"] .hero-banner {
+  background-image: linear-gradient(135deg, #0284c7 0%, #0ea5e9 55%, #22d3ee 100%);
+}
+
+/* Theme: Ocean Dark (Deep Navy + Cyan) */
+:root[data-theme="ocean"] {
+  --color-slate-950: #050f1e;
+  --color-slate-900: #0b1b33;
+  --color-slate-800: #122847;
+  --color-slate-700: #1e3a5f;
+  --color-indigo-400: #38bdf8;
+  --color-indigo-500: #0ea5e9;
+  --color-indigo-600: #0284c7;
+  --color-indigo-700: #0369a1;
+}
+:root[data-theme="ocean"] .hero-banner {
+  background-image: linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #06b6d4 100%);
+}
+
+/* Theme: Forest Dark (Deep Emerald + Mint) */
+:root[data-theme="forest"] {
+  --color-slate-950: #06130f;
+  --color-slate-900: #0c211a;
+  --color-slate-800: #143228;
+  --color-slate-700: #1f473a;
+  --color-indigo-400: #34d399;
+  --color-indigo-500: #10b981;
+  --color-indigo-600: #059669;
+  --color-indigo-700: #047857;
+}
+:root[data-theme="forest"] .hero-banner {
+  background-image: linear-gradient(135deg, #065f46 0%, #059669 55%, #14b8a6 100%);
+}
+
+/* Theme: Sunset Warm (Cozy Paper + Coral/Orange Light) */
+:root[data-theme="sunset"] {
+  --color-slate-50: #fdf8f3;
+  --color-slate-100: #faeee2;
+  --color-slate-200: #f3dcc6;
+  --color-indigo-50: #fff7ed;
+  --color-indigo-100: #ffedd5;
+  --color-indigo-400: #fb923c;
+  --color-indigo-500: #f97316;
+  --color-indigo-600: #ea580c;
+  --color-indigo-700: #c2410c;
+}
+:root[data-theme="sunset"] .hero-banner {
+  background-image: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #ec4899 100%);
+}
+
+/* Theme: Lavender (Soft Pastel Violet Light) */
+:root[data-theme="lavender"] {
+  --color-slate-50: #f8f6ff;
+  --color-slate-100: #f0ebff;
+  --color-slate-200: #e2d9fb;
+  --color-indigo-50: #f5f3ff;
+  --color-indigo-100: #ede9fe;
+  --color-indigo-400: #a78bfa;
+  --color-indigo-500: #8b5cf6;
+  --color-indigo-600: #7c3aed;
+  --color-indigo-700: #6d28d9;
+}
+:root[data-theme="lavender"] .hero-banner {
+  background-image: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 55%, #d946ef 100%);
+}
+
+/* Theme: Rose Dark (Velvet Dark + Rose/Pink) */
+:root[data-theme="rose-dark"] {
+  --color-slate-950: #160a10;
+  --color-slate-900: #23111a;
+  --color-slate-800: #331926;
+  --color-slate-700: #4c2538;
+  --color-indigo-400: #fb7185;
+  --color-indigo-500: #f43f5e;
+  --color-indigo-600: #e11d48;
+  --color-indigo-700: #be123c;
+}
+:root[data-theme="rose-dark"] .hero-banner {
+  background-image: linear-gradient(135deg, #9f1239 0%, #e11d48 55%, #f43f5e 100%);
+}
+
 /* Custom sleek scrollbars */
 ::-webkit-scrollbar {
   width: 7px;

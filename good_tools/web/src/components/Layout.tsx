@@ -3,9 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Search,
   Star,
-  Sun,
-  Moon,
-  Monitor,
+  Palette,
   Menu,
   X,
   Wrench,
@@ -15,10 +13,11 @@ import {
   Eye,
   EyeOff,
   Languages,
+  Check,
 } from 'lucide-react';
 import { TOOLS, CATEGORY_LABELS, type ToolCategory } from '../data/tools';
 import { ToolIcon } from './ToolIcon';
-import type { ThemeMode, LangMode } from '../hooks/usePreferences';
+import { THEME_OPTIONS, type ThemeMode, type LangMode } from '../hooks/usePreferences';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,6 +43,7 @@ export function Layout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [query, setQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -57,6 +57,7 @@ export function Layout({
       if (e.key === 'Escape') {
         setSearchOpen(false);
         setManageOpen(false);
+        setThemeOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -77,10 +78,7 @@ export function Layout({
       })
     : TOOLS;
 
-  const cycleTheme = () => {
-    const order: ThemeMode[] = ['system', 'light', 'dark'];
-    setTheme(order[(order.indexOf(theme) + 1) % order.length]);
-  };
+  const currentThemeOpt = THEME_OPTIONS.find((t) => t.id === theme) || THEME_OPTIONS[0];
 
   const categories: ToolCategory[] = ['ha', 'general', 'developer', 'feed'];
   const tName = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.nameEn ? t.nameEn : t.name);
@@ -263,19 +261,61 @@ export function Layout({
               <span>{lang === 'ko' ? 'KO' : 'EN'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={cycleTheme}
-              title="테마 전환"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
-            >
-              {theme === 'light' && <Sun className="w-4 h-4 text-amber-500" />}
-              {theme === 'dark' && <Moon className="w-4 h-4 text-indigo-400" />}
-              {theme === 'system' && <Monitor className="w-4 h-4 text-cyan-500" />}
-              <span className="hidden sm:inline">
-                {theme === 'system' ? (lang === 'en' ? 'Auto' : '자동') : theme === 'light' ? (lang === 'en' ? 'Light' : '라이트') : (lang === 'en' ? 'Dark' : '다크')}
-              </span>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setThemeOpen((o) => !o)}
+                title={lang === 'en' ? 'Choose theme' : '테마 선택'}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0"
+                  style={{ background: currentThemeOpt.swatch }}
+                />
+                <Palette className="w-3.5 h-3.5 hidden sm:inline opacity-70" />
+                <span className="hidden sm:inline">
+                  {lang === 'en' ? currentThemeOpt.labelEn : currentThemeOpt.label}
+                </span>
+              </button>
+
+              {themeOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setThemeOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5 z-40">
+                    <div className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-400">
+                      {lang === 'en' ? 'Select Theme' : '테마 선택'}
+                    </div>
+                    {THEME_OPTIONS.map((opt) => {
+                      const active = opt.id === theme;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setTheme(opt.id);
+                            setThemeOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                            active
+                              ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold'
+                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 shrink-0"
+                              style={{ background: opt.swatch }}
+                            />
+                            <span>{lang === 'en' ? opt.labelEn : opt.label}</span>
+                          </span>
+                          {active && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

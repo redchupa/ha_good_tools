@@ -377,22 +377,26 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   });
 
   // 6. User Preferences Sync (/data/prefs.json)
+  const VALID_THEMES = new Set(['system', 'light', 'dark', 'ha-blue', 'ocean', 'forest', 'sunset', 'lavender', 'rose-dark']);
+
   router.get('/prefs', async (_req, res) => {
-    const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko' });
+    const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });
     res.json({
       favorites: Array.isArray(prefs.favorites) ? prefs.favorites : [],
       hiddenTools: Array.isArray(prefs.hiddenTools) ? prefs.hiddenTools : [],
       lang: prefs.lang === 'en' ? 'en' : 'ko',
+      theme: VALID_THEMES.has(prefs.theme) ? prefs.theme : defaultTheme,
     });
   });
 
   router.put('/prefs', async (req, res) => {
-    const current = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko' });
-    const { favorites, hiddenTools, lang } = req.body || {};
+    const current = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });
+    const { favorites, hiddenTools, lang, theme } = req.body || {};
     const next = {
       favorites: Array.isArray(favorites) ? favorites.filter((x) => typeof x === 'string').slice(0, 100) : current.favorites || [],
       hiddenTools: Array.isArray(hiddenTools) ? hiddenTools.filter((x) => typeof x === 'string').slice(0, 100) : current.hiddenTools || [],
       lang: lang === 'en' || lang === 'ko' ? lang : current.lang || 'ko',
+      theme: VALID_THEMES.has(theme) ? theme : (VALID_THEMES.has(current.theme) ? current.theme : defaultTheme),
     };
     await writeJsonFile(prefsFile, next);
     res.json(next);

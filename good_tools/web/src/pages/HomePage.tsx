@@ -39,7 +39,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 p-6 sm:p-8 text-white shadow-lg">
+      <div className="hero-banner relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white shadow-lg">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-xs text-xs font-medium mb-3">
             <Sparkles className="w-3.5 h-3.5" />
