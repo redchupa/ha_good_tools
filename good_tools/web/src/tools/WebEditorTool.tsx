@@ -1,3 +1,5 @@
+import { previewDocument } from '../utils/preview';
+import { downloadBlob } from '../utils/download';
 import { useEffect, useMemo, useState } from 'react';
 import { marked } from 'marked';
 import { Download } from 'lucide-react';
@@ -30,10 +32,7 @@ export default function WebEditorTool() {
 
   const downloadFile = (text: string, filename: string, mime: string) => {
     const blob = new Blob([text], { type: mime });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
+    downloadBlob(blob, filename);
   };
 
   return (
@@ -87,7 +86,7 @@ export default function WebEditorTool() {
         <iframe
           title="Markdown Preview"
           sandbox=""
-          srcDoc={`<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,-apple-system,sans-serif;padding:16px;margin:0;color:#0f172a;line-height:1.6;font-size:14px}h1{font-size:1.4em;margin-top:0}h2{font-size:1.15em;margin-top:1.2em}pre,code{background:#f1f5f9;border-radius:6px;font-family:monospace}code{padding:2px 5px}pre{padding:10px;overflow:auto}blockquote{border-left:4px solid #6366f1;margin:0;padding-left:12px;color:#475569}</style></head><body>${html}</body></html>`}
+          srcDoc={previewDocument(`<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,-apple-system,sans-serif;padding:16px;margin:0;color:#0f172a;line-height:1.6;font-size:14px}h1{font-size:1.4em;margin-top:0}h2{font-size:1.15em;margin-top:1.2em}pre,code{background:#f1f5f9;border-radius:6px;font-family:monospace}code{padding:2px 5px}pre{padding:10px;overflow:auto}blockquote{border-left:4px solid #6366f1;margin:0;padding-left:12px;color:#475569}</style></head><body>${html}</body></html>`)}
           className="w-full h-[460px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white"
         />
       </div>

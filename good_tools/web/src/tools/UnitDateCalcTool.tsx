@@ -7,14 +7,12 @@ export default function UnitDateCalcTool() {
   const [cm, setCm] = useState('175');
   const [kg, setKg] = useState('70');
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const [targetDate, setTargetDate] = useState('2026-12-31');
   const [birthDate, setBirthDate] = useState('1990-01-01');
 
-  const dDayDiff = Math.ceil(
-    (new Date(targetDate + 'T00:00:00').getTime() - new Date(todayStr + 'T00:00:00').getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
+  const dDayDiff = (Date.parse(targetDate) - todayUtc) / 86400000;
 
   const calcManAge = () => {
     const b = new Date(birthDate + 'T00:00:00');

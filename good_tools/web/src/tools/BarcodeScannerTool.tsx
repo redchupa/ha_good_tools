@@ -8,6 +8,7 @@ export default function BarcodeScannerTool() {
   const [error, setError] = useState('');
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const active = useRef(false);
   const containerId = 'good-tools-qr-reader';
 
   const stopCamera = async () => {
@@ -20,7 +21,9 @@ export default function BarcodeScannerTool() {
   };
 
   useEffect(() => {
+    active.current = true;
     return () => {
+      active.current = false;
       stopCamera();
     };
   }, []);
@@ -45,6 +48,7 @@ export default function BarcodeScannerTool() {
         },
         () => {}
       );
+      if (!active.current) await stopCamera();
     } catch (err) {
       setScanning(false);
       setError(err instanceof Error ? err.message : '카메라를 시작할 수 없습니다.');

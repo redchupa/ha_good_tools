@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import Parser from 'rss-parser';
 import * as cheerio from 'cheerio';
-import { assertSafePublicUrl } from '../utils/ssrf.mjs';
+import { resolvePublicTarget, requestPublic } from '../utils/ssrf.mjs';
 import { sendWakeOnLan, checkTcpPort, inspectSsl } from '../utils/lan.mjs';
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024; // 2MB
@@ -28,7 +28,7 @@ async function readTextLimited(response, maxBytes = MAX_RESPONSE_BYTES) {
     if (done) break;
     total += value.byteLength;
     if (total > maxBytes) {
-      reader.cancel();
+      await reader.cancel();
       throw new Error(`응답 크기가 제한(${Math.round(maxBytes / 1024 / 1024)}MB)을 초과했습니다.`);
     }
     chunks.push(value);
@@ -41,31 +41,40 @@ async function safeFetchPublic(rawUrl, headers = {}, maxHops = 5) {
   if (!/^https?:\/\//i.test(current)) current = `https://${current}`;
 
   for (let hop = 0; hop <= maxHops; hop++) {
-    const safeUrl = await assertSafePublicUrl(current);
-    const response = await fetch(safeUrl.toString(), {
+    const target = await resolvePublicTarget(current);
+    const response = await requestPublic(target, {
       method: 'GET',
-      redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: { 'User-Agent': USER_AGENT, ...headers },
     });
 
     if (response.status >= 300 && response.status < 400) {
       const loc = response.headers.get('location');
-      try { await response.body?.cancel(); } catch {}
-      if (!loc) return { response, finalUrl: safeUrl.toString() };
+      if (!loc) return { response, finalUrl: target.url.toString() };
+      await response.body?.cancel();
       if (hop === maxHops) throw new Error('리다이렉트 횟수 제한을 초과했습니다.');
-      current = new URL(loc, safeUrl).toString();
+      current = new URL(loc, target.url).toString();
       continue;
     }
 
-    return { response, finalUrl: safeUrl.toString() };
+    return { response, finalUrl: target.url.toString() };
   }
   throw new Error('요청을 처리할 수 없습니다.');
 }
 
+function publicLink(value, base) {
+  if (!value) return '';
+  try {
+    const url = new URL(value, base);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = true, defaultTheme = 'system', appVersion = '1.3.2' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.3.3' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
@@ -94,36 +103,57 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     next();
   }
 
+  // Per-instance budgets also apply to disconnected callers until their work finishes.
+  const lanBudget = { active: 0, max: 4, starts: [], perMinute: 30 };
+  const publicBudget = { active: 0, max: 8, starts: [], perMinute: 90 };
+  function boundedRoute(budget, fn) {
+    return asyncRoute(async (req, res) => {
+      const now = Date.now();
+      budget.starts = budget.starts.filter(start => now - start < 60000);
+      if (budget.active >= budget.max || budget.starts.length >= budget.perMinute) {
+        return res.status(429).json({ error: '요청이 많습니다. 잠시 후 다시 시도해 주세요.' });
+      }
+      budget.active++;
+      budget.starts.push(now);
+      try {
+        await fn(req, res);
+      } finally {
+        budget.active--;
+      }
+    });
+  }
+
   async function readJsonFile(filePath, fallback) {
     try {
       const raw = await fs.readFile(filePath, 'utf8');
       return JSON.parse(raw);
-    } catch {
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
       return fallback;
     }
   }
 
-  function writeJsonFile(filePath, data) {
+  function mutateFile(filePath, fallback, update) {
     const prev = writeQueues.get(filePath) || Promise.resolve();
-    const next = prev
-      .catch(() => {})
-      .then(async () => {
-        await fs.mkdir(dataDir, { recursive: true });
-        const tmpPath = `${filePath}.${crypto.randomUUID().slice(0, 8)}.tmp`;
-        await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-        await fs.rename(tmpPath, filePath);
-      });
+    const next = prev.catch(() => {}).then(async () => {
+      const current = await readJsonFile(filePath, fallback);
+      const data = update(current);
+      await fs.mkdir(dataDir, { recursive: true });
+      const tmp = filePath + '.' + crypto.randomUUID() + '.tmp';
+      try {
+        await fs.writeFile(tmp, JSON.stringify(data, null, 2), { mode: 0o600 });
+        await fs.rename(tmp, filePath);
+      } finally {
+        await fs.rm(tmp, { force: true });
+      }
+      return data;
+    });
     writeQueues.set(filePath, next);
     return next;
   }
 
-  async function loadFeeds() {
-    const parsed = await readJsonFile(feedsFile, null);
-    return Array.isArray(parsed) ? parsed : DEFAULT_FEEDS;
-  }
-
-  async function saveFeeds(feeds) {
-    await writeJsonFile(feedsFile, feeds);
+  function loadFeeds() {
+    return readJsonFile(feedsFile, DEFAULT_FEEDS);
   }
 
   // Health & runtime config
@@ -139,7 +169,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   });
 
   // 1. URL Unshortener (longUrl)
-  router.post('/unshorten', requireNetworkEnabled, async (req, res) => {
+  router.post('/unshorten', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { url } = req.body || {};
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: '변환할 URL을 입력해 주세요.' });
@@ -154,35 +184,26 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
 
       const maxHops = 10;
       for (let hop = 0; hop < maxHops; hop++) {
-        const safeUrl = await assertSafePublicUrl(currentUrl);
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-        let response;
-        try {
-          response = await fetch(safeUrl.toString(), {
-            method: 'GET',
-            redirect: 'manual',
-            signal: controller.signal,
-            headers: { 'User-Agent': USER_AGENT },
-          });
-        } finally {
-          clearTimeout(timer);
-        }
-
+        const target = await resolvePublicTarget(currentUrl);
+        const response = await requestPublic(target, {
+          method: 'GET',
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          headers: { 'User-Agent': USER_AGENT },
+        });
         const location = response.headers.get('location');
         // Cancel body immediately so we don't download full pages
         try { await response.body?.cancel(); } catch {}
 
         chain.push({
           hop: hop + 1,
-          url: safeUrl.toString(),
+          url: target.url.toString(),
           status: response.status,
           statusText: response.statusText,
         });
 
         if (response.status >= 300 && response.status < 400 && location) {
-          currentUrl = new URL(location, safeUrl).toString();
+          if (hop + 1 === maxHops) throw new Error('리다이렉트 횟수 제한을 초과했습니다.');
+          currentUrl = new URL(location, target.url).toString();
         } else {
           break;
         }
@@ -197,10 +218,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       return res.status(400).json({ error: err.message || 'URL 추적 중 오류가 발생했습니다.' });
     }
-  });
+  }));
 
   // 2. Public IP & Client Info (ipconfig)
-  router.get('/ipinfo', requireNetworkEnabled, async (req, res) => {
+  router.get('/ipinfo', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const clientIp =
       req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() ||
       req.headers['x-real-ip']?.toString() ||
@@ -210,9 +231,9 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     let publicInfo = null;
     const providers = [
       async () => {
-        const r = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(6000) });
-        if (!r.ok) throw new Error('ipwho.is failed');
-        const d = await r.json();
+        const { response: r } = await safeFetchPublic('https://ipwho.is/', {}, 0);
+        if (!r.ok) { await r.body?.cancel(); throw new Error('ipwho.is failed'); }
+        const d = JSON.parse(await readTextLimited(r, 65536));
         if (d.success === false) throw new Error(d.message || 'ipwho.is error');
         return {
           ip: d.ip,
@@ -229,9 +250,9 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
         };
       },
       async () => {
-        const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(5000) });
-        if (!r.ok) throw new Error('ipify failed');
-        const d = await r.json();
+        const { response: r } = await safeFetchPublic('https://api.ipify.org?format=json', {}, 0);
+        if (!r.ok) { await r.body?.cancel(); throw new Error('ipify failed'); }
+        const d = JSON.parse(await readTextLimited(r, 65536));
         return { ip: d.ip, country: '', city: '', isp: '', timezone: '' };
       },
     ];
@@ -251,10 +272,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       publicInfo,
       fetchedAt: new Date().toISOString(),
     });
-  });
+  }));
 
   // 3. DNS Lookup (ipconfig)
-  router.post('/dns', requireNetworkEnabled, async (req, res) => {
+  router.post('/dns', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { domain } = req.body || {};
     if (!domain || typeof domain !== 'string') {
       return res.status(400).json({ error: '조회할 도메인을 입력해 주세요.' });
@@ -285,10 +306,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       domain: cleanDomain,
       records: { A: a, AAAA: aaaa, MX: mx, TXT: txt, CNAME: cname, NS: ns },
     });
-  });
+  }));
 
   // 4. Remote HTML Source Viewer (htmlViewer)
-  router.post('/fetch-html', requireNetworkEnabled, asyncRoute(async (req, res) => {
+  router.post('/fetch-html', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { url } = req.body || {};
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: '가져올 URL을 입력해 주세요.' });
@@ -330,7 +351,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   }));
 
   // 5. RSS/Atom Feed Reader (scrapper)
-  router.post('/rss', requireNetworkEnabled, asyncRoute(async (req, res) => {
+  router.post('/rss', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { url } = req.body || {};
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: 'RSS/Atom 피드 URL을 입력해 주세요.' });
@@ -341,6 +362,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
         Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
       });
       if (!response.ok) {
+        await response.body?.cancel();
         throw new Error(`피드 서버 응답 오류 (HTTP ${response.status})`);
       }
 
@@ -354,7 +376,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
         link: feed.link || finalUrl,
         items: (feed.items || []).slice(0, 50).map((item) => ({
           title: item.title || '(제목 없음)',
-          link: item.link || '',
+          link: publicLink(item.link, finalUrl),
           pubDate: item.isoDate || item.pubDate || '',
           author: item.creator || item.author || '',
           snippet: (item.contentSnippet || item.summary || '').slice(0, 400),
@@ -367,12 +389,12 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   }));
 
   // Saved RSS Feeds CRUD
-  router.get('/feeds', async (_req, res) => {
+  router.get('/feeds', asyncRoute(async (_req, res) => {
     const feeds = await loadFeeds();
     res.json({ feeds });
-  });
+  }));
 
-  router.post('/feeds', async (req, res) => {
+  router.post('/feeds', asyncRoute(async (req, res) => {
     const { name, url } = req.body || {};
     if (!name || !url || typeof name !== 'string' || typeof url !== 'string') {
       return res.status(400).json({ error: '피드 이름과 URL을 모두 입력해 주세요.' });
@@ -382,27 +404,27 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         throw new Error('http:// 또는 https:// URL만 저장할 수 있습니다.');
       }
-      const feeds = await loadFeeds();
       const newFeed = {
         id: crypto.randomUUID().slice(0, 8),
         name: name.trim().slice(0, 80),
         url: parsed.toString(),
       };
-      feeds.push(newFeed);
-      await saveFeeds(feeds);
+      if (newFeed.url.length > 4096 || !newFeed.name) throw new Error('이름과 URL 길이를 확인해 주세요.');
+      const feeds = await mutateFile(feedsFile, DEFAULT_FEEDS, list => {
+        if (list.length >= 200) throw new Error('피드는 최대 200개까지 저장할 수 있습니다.');
+        return [...list, newFeed];
+      });
       return res.status(201).json({ feed: newFeed, feeds });
     } catch (err) {
       return res.status(400).json({ error: err.message || '피드 저장 실패' });
     }
-  });
+  }));
 
-  router.delete('/feeds/:id', async (req, res) => {
+  router.delete('/feeds/:id', asyncRoute(async (req, res) => {
     const { id } = req.params;
-    const feeds = await loadFeeds();
-    const filtered = feeds.filter((f) => f.id !== id);
-    await saveFeeds(filtered);
+    const filtered = await mutateFile(feedsFile, DEFAULT_FEEDS, list => list.filter(f => f.id !== id));
     res.json({ feeds: filtered });
-  });
+  }));
 
   // 6. User Preferences Sync (/data/prefs.json)
   const VALID_THEMES = new Set([
@@ -411,7 +433,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot',
   ]);
 
-  router.get('/prefs', async (_req, res) => {
+  router.get('/prefs', asyncRoute(async (_req, res) => {
     const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });
     res.json({
       favorites: Array.isArray(prefs.favorites) ? prefs.favorites : [],
@@ -419,28 +441,26 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       lang: prefs.lang === 'en' ? 'en' : 'ko',
       theme: VALID_THEMES.has(prefs.theme) ? prefs.theme : defaultTheme,
     });
-  });
+  }));
 
-  router.put('/prefs', async (req, res) => {
-    const current = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });
+  router.put('/prefs', asyncRoute(async (req, res) => {
     const { favorites, hiddenTools, lang, theme } = req.body || {};
-    const next = {
+    const next = await mutateFile(prefsFile, {}, current => ({
       favorites: Array.isArray(favorites) ? favorites.filter((x) => typeof x === 'string').slice(0, 100) : current.favorites || [],
       hiddenTools: Array.isArray(hiddenTools) ? hiddenTools.filter((x) => typeof x === 'string').slice(0, 100) : current.hiddenTools || [],
       lang: lang === 'en' || lang === 'ko' ? lang : current.lang || 'ko',
       theme: VALID_THEMES.has(theme) ? theme : (VALID_THEMES.has(current.theme) ? current.theme : defaultTheme),
-    };
-    await writeJsonFile(prefsFile, next);
+    }));
     res.json(next);
-  });
+  }));
 
   // 7. Shared Family Clipboard (/data/clipboard.json)
-  router.get('/clipboard', async (_req, res) => {
+  router.get('/clipboard', asyncRoute(async (_req, res) => {
     const items = await readJsonFile(clipboardFile, []);
     res.json({ items: Array.isArray(items) ? items : [] });
-  });
+  }));
 
-  router.post('/clipboard', async (req, res) => {
+  router.post('/clipboard', asyncRoute(async (req, res) => {
     const { title = '', content = '', tag = '' } = req.body || {};
     if (!content || typeof content !== 'string' || !content.trim()) {
       return res.status(400).json({ error: '저장할 내용을 입력해 주세요.' });
@@ -448,8 +468,6 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     if (content.length > 20000) {
       return res.status(400).json({ error: '한 항목당 최대 20,000자까지 저장할 수 있습니다.' });
     }
-    const items = await readJsonFile(clipboardFile, []);
-    const list = Array.isArray(items) ? items : [];
     const newItem = {
       id: crypto.randomUUID().slice(0, 8),
       title: String(title || '').trim().slice(0, 100),
@@ -458,33 +476,27 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       pinned: false,
       createdAt: new Date().toISOString(),
     };
-    const next = [newItem, ...list].slice(0, 50);
-    await writeJsonFile(clipboardFile, next);
+    const next = await mutateFile(clipboardFile, [], list => [newItem, ...list].slice(0, 50));
     res.status(201).json({ item: newItem, items: next });
-  });
+  }));
 
-  router.patch('/clipboard/:id', async (req, res) => {
+  router.patch('/clipboard/:id', asyncRoute(async (req, res) => {
     const { id } = req.params;
     const { pinned } = req.body || {};
-    const items = await readJsonFile(clipboardFile, []);
-    const list = (Array.isArray(items) ? items : []).map((it) =>
+    const list = await mutateFile(clipboardFile, [], items => items.map((it) =>
       it.id === id ? { ...it, pinned: typeof pinned === 'boolean' ? pinned : !it.pinned } : it
-    );
-    list.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
-    await writeJsonFile(clipboardFile, list);
+    ).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))));
     res.json({ items: list });
-  });
+  }));
 
-  router.delete('/clipboard/:id', async (req, res) => {
+  router.delete('/clipboard/:id', asyncRoute(async (req, res) => {
     const { id } = req.params;
-    const items = await readJsonFile(clipboardFile, []);
-    const next = (Array.isArray(items) ? items : []).filter((it) => it.id !== id);
-    await writeJsonFile(clipboardFile, next);
+    const next = await mutateFile(clipboardFile, [], items => items.filter(it => it.id !== id));
     res.json({ items: next });
-  });
+  }));
 
   // 8. Wake-on-LAN (LAN tools)
-  router.post('/wol', requireLanEnabled, async (req, res) => {
+  router.post('/wol', requireLanEnabled, boundedRoute(lanBudget, async (req, res) => {
     const { mac, broadcastIp = '255.255.255.255', port = 9 } = req.body || {};
     try {
       const result = await sendWakeOnLan(mac, broadcastIp, port);
@@ -492,10 +504,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       res.status(400).json({ error: err.message || 'WoL 패킷 전송 실패' });
     }
-  });
+  }));
 
   // 9. LAN / Host TCP Port Check (LAN tools)
-  router.post('/port-check', requireLanEnabled, async (req, res) => {
+  router.post('/port-check', requireLanEnabled, boundedRoute(lanBudget, async (req, res) => {
     const { host, port, timeoutMs = 2500 } = req.body || {};
     try {
       const safeTimeout = Math.min(5000, Math.max(500, Number(timeoutMs) || 2500));
@@ -504,10 +516,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       res.status(400).json({ error: err.message || '포트 점검 오류' });
     }
-  });
+  }));
 
   // 10. SSL Certificate & Security Headers Inspector
-  router.post('/ssl-check', requireNetworkEnabled, async (req, res) => {
+  router.post('/ssl-check', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { host, port = 443 } = req.body || {};
     try {
       const result = await inspectSsl(host, port);
@@ -515,7 +527,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     } catch (err) {
       res.status(400).json({ error: err.message || 'SSL 진단 중 오류가 발생했습니다.' });
     }
-  });
+  }));
 
   return router;
 }

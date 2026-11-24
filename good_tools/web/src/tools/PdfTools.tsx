@@ -1,13 +1,11 @@
+import { downloadBlob } from '../utils/download';
 import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { Upload, Download, Trash2 } from 'lucide-react';
 
 function downloadBytes(bytes: Uint8Array, filename: string) {
   const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
+  downloadBlob(blob, filename);
 }
 
 export default function PdfTools() {
@@ -22,6 +20,7 @@ export default function PdfTools() {
 
   const handleMerge = async () => {
     if (files.length < 2) return;
+    if (files.reduce((n,f) => n + f.size, 0) > 32 * 1024 * 1024) return setMsg('파일 합계는 32 MiB까지 지원합니다.');
     setBusy(true);
     setMsg('');
     try {
@@ -41,6 +40,11 @@ export default function PdfTools() {
   };
 
   const onSelectSplit = async (file: File) => {
+    setPageCount(0);
+    if (file.size > 32 * 1024 * 1024) {
+      setSplitFile(null);
+      return setMsg('PDF는 32 MiB까지 지원합니다.');
+    }
     setSplitFile(file);
     setMsg('');
     try {
@@ -84,6 +88,7 @@ export default function PdfTools() {
 
   const handleImgToPdf = async () => {
     if (imgFiles.length === 0) return;
+    if (imgFiles.reduce((n,f) => n + f.size, 0) > 32 * 1024 * 1024) return setMsg('파일 합계는 32 MiB까지 지원합니다.');
     setBusy(true);
     setMsg('');
     try {

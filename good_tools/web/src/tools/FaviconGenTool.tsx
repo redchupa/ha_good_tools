@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Upload, Download } from 'lucide-react';
 
 const SIZES = [
@@ -13,6 +13,8 @@ export default function FaviconGenTool() {
   const [svgCode, setSvgCode] = useState(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#4f46e5"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-size="64" font-family="sans-serif" font-weight="bold">G</text></svg>`
   );
+
+  useEffect(() => () => { if (srcUrl) URL.revokeObjectURL(srcUrl); }, [srcUrl]);
 
   const effectiveUrl =
     srcUrl || `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgCode)}`;

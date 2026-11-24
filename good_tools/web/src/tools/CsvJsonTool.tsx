@@ -1,26 +1,16 @@
 import { useMemo, useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text.replace(/\r/g, '').trim().split('\n').filter(Boolean);
-  if (lines.length < 2) return [];
-  const delim = lines[0].includes('\t') ? '\t' : ',';
-  const headers = lines[0].split(delim).map((h) => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).map((line) => {
-    const cols = line.split(delim).map((c) => c.trim().replace(/^"|"$/g, ''));
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      row[h || `col${i + 1}`] = cols[i] ?? '';
-    });
-    return row;
-  });
-}
+import { parseCsv } from '../utils/csv';
 
 export default function CsvJsonTool() {
   const [csvText, setCsvText] = useState('name,room,state\n거실 조명,거실,on\n안방 에어컨,안방,off\n현관 센서,현관,on');
   const [filter, setFilter] = useState('');
 
-  const rows = useMemo(() => parseCsv(csvText), [csvText]);
+  const { rows, error } = useMemo(() => {
+    try { return { rows: parseCsv(csvText), error: '' }; }
+    catch (err) { return { rows: [], error: String(err) }; }
+  }, [csvText]);
   const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
   const filteredRows = filter.trim()
     ? rows.filter((r) => Object.values(r).some((v) => v.toLowerCase().includes(filter.toLowerCase())))
@@ -53,6 +43,7 @@ export default function CsvJsonTool() {
         </div>
       </div>
 
+      {error && <p role="alert">{error}</p>}
       {headers.length > 0 && (
         <div className="space-y-2">
           <input
@@ -63,6 +54,7 @@ export default function CsvJsonTool() {
           />
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
             <table className="w-full text-xs text-left border-collapse">
+              <caption>미리보기 {Math.min(filteredRows.length, 200)} / {filteredRows.length}행</caption>
               <thead className="bg-slate-100 dark:bg-slate-800">
                 <tr>
                   {headers.map((h) => (
@@ -71,7 +63,7 @@ export default function CsvJsonTool() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredRows.map((row, idx) => (
+                {filteredRows.slice(0, 200).map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     {headers.map((h) => (
                       <td key={h} className="py-2 px-3">{row[h]}</td>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
 const PRESETS = [
@@ -15,18 +15,22 @@ export default function RegexTesterTool() {
   const [text, setText] = useState('연락처: 010-1234-5678 / 보조: 01098765432 / 이메일: test@example.com');
   const [replaceWith, setReplaceWith] = useState('010-****-****');
 
-  const { matches, replaced, error } = useMemo(() => {
-    try {
-      const safeFlags = flags.includes('g') ? flags : flags + 'g';
-      const re = new RegExp(pattern, safeFlags);
-      const found = Array.from(text.matchAll(re))
-        .slice(0, 200)
-        .map((m) => ({ value: m[0], index: m.index ?? 0 }));
-      const rep = text.replace(new RegExp(pattern, flags), replaceWith);
-      return { matches: found, replaced: rep, error: '' };
-    } catch (e) {
-      return { matches: [], replaced: '', error: e instanceof Error ? e.message : '정규식 오류' };
-    }
+  const [{ matches, replaced, error }, setResult] = useState({
+    matches: [] as { value: string; index: number }[], replaced: '', error: '',
+  });
+  useEffect(() => {
+    const worker = new Worker(new URL('../utils/regex.worker.ts', import.meta.url), { type: 'module' });
+    const finish = (result: typeof initial) => {
+      clearTimeout(timer);
+      worker.terminate();
+      setResult(result);
+    };
+    const initial = { matches: [] as { value: string; index: number }[], replaced: '', error: '' };
+    const timer = setTimeout(() => finish({ ...initial, error: '정규식 실행 시간이 초과되었습니다.' }), 1200);
+    worker.onmessage = event => finish(event.data);
+    worker.onerror = () => finish({ ...initial, error: '정규식을 실행할 수 없습니다.' });
+    worker.postMessage({ pattern, flags, text, replaceWith });
+    return () => { clearTimeout(timer); worker.terminate(); };
   }, [pattern, flags, text, replaceWith]);
 
   return (

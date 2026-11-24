@@ -2,10 +2,17 @@
 
 > **이 문서는 작업 중단(사용량 제한 등) 시 다른 모델이나 세션이 즉시 작업을 이어받을 수 있도록 매 마일스톤마다 갱신됩니다.**
 
-- **최종 갱신 시각**: 2026-11-24 14:04 (KST)
-- **현재 상태**: `v1.3.0 완료 (나라별 환율 계산기 + 미니게임 전용 탭: 사다리타기/점심 룰렛/반응속도/로또)`
+- **최종 갱신일** 2026-11-24 KST
+- **현재 작업** v1.3.3 품질·보안 감사 및 릴리스
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (**주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
+
+## v1.3.3 품질·보안 감사
+
+- SSRF·TLS 연결, Ingress 및 LAN 요청 제한, 공유 파일 트랜잭션, 비동기 예외 처리, 정규식·CSV·크론, Blob URL 및 장치 리소스 수명, Docker 빌드와 의존성을 수정했습니다.
+- 서브 HA 192.168.1.129에서 새 잠금 파일로 의존성을 설치하고 프로덕션 웹 빌드, 백엔드 테스트 11/11, 웹 테스트 10/10, npm audit 0건을 확인했습니다. 메인 HA는 사용하지 않았습니다.
+- 서브 HA Supervisor에서 격리된 QA 앱을 빌드·기동하고 인증된 Ingress로 메인 HTML, health(1.3.3)와 도구 JS 50개가 정상 응답하는 것을 확인했습니다.
+- 전체 심각도 표, 미검증 범위, 제품 우선순위와 완료 기준은 [코드 감사 및 개선안](REVIEW_HANDOFF.md#6-v133-코드-감사)에 있습니다. ARM 및 Companion 실기기 결과는 열려 있습니다.
 
 ## 릴리즈 이력
 - [x] **v1.0.0 ~ v1.0.3**: 초기 도구 세트 구축, Docker 빌드 수정, 카카오 우편번호 CDN 최신화(`t1.kakaocdn.net`), 후원 섹션 추가, 서브 HA Ingress 전체 E2E 검증 통과
@@ -21,5 +28,5 @@
 - [x] **Step 7**: `v1.1.0` 릴리즈 및 서브 HA(`http://192.168.1.129`) 업데이트·신규 14종 도구 + UX 3종 전 항목 실동작 검증 통과 (`v1.1.1`에 `index.html` no-cache 개선 반영)
 
 ## 검증 명령어
-- 백엔드 테스트: `cd good_tools/server && npm test` (8/8 pass)
-- 프론트엔드 빌드 & 테스트: `cd good_tools/web && npm run build && npm test` (0 errors, 7/7 pass)
+- 백엔드 테스트: `cd good_tools/server && npm test` (11/11 pass)
+- 프론트엔드 빌드 & 테스트: `cd good_tools/web && npm run build && npm test` (0 errors, 10/10 pass)

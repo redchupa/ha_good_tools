@@ -24,6 +24,7 @@ export default function TtsTool() {
     load();
     window.speechSynthesis.onvoiceschanged = load;
     return () => {
+      window.speechSynthesis.onvoiceschanged = null;
       window.speechSynthesis.cancel();
     };
   }, [supported, selectedVoice]);

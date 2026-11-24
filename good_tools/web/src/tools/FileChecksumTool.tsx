@@ -34,6 +34,11 @@ export default function FileChecksumTool() {
   const [expected, setExpected] = useState('');
 
   const handleFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      setHashes(null);
+      setSourceLabel('파일 체크섬은 8 MiB까지 지원합니다.');
+      return;
+    }
     const bytes = new Uint8Array(await file.arrayBuffer());
     setSourceLabel(`${file.name} (${file.size.toLocaleString()} bytes)`);
     setHashes(computeHashesFromBytes(bytes));
@@ -67,6 +72,7 @@ export default function FileChecksumTool() {
         </label>
 
         <textarea
+          maxLength={100000}
           rows={4}
           value={textInput}
           onChange={(e) => handleText(e.target.value)}
@@ -95,6 +101,7 @@ export default function FileChecksumTool() {
         )}
       </div>
 
+      {!hashes && sourceLabel && <p role="status">{sourceLabel}</p>}
       {hashes && (
         <div className="space-y-2">
           <div className="text-xs font-semibold text-slate-500">대상: {sourceLabel}</div>

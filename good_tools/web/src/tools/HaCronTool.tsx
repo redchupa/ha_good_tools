@@ -10,50 +10,45 @@ const PRESETS = [
   { label: '매월 1일 오전 9시', expr: '0 9 1 * *' },
 ];
 
-function matchField(expr: string, val: number, min: number, max: number): boolean {
+function field(expr: string, min: number, max: number) {
+  const values = new Set<number>();
   for (const part of expr.split(',')) {
-    const [range, stepStr] = part.split('/');
-    const step = stepStr ? Number(stepStr) : 1;
-    if (!step || step < 1) return false;
-
-    if (range === '*') {
-      if ((val - min) % step === 0) return true;
-    } else if (range.includes('-')) {
-      const [s, e] = range.split('-').map(Number);
-      if (val >= s && val <= e && (val - s) % step === 0) return true;
-    } else {
-      const n = Number(range);
-      if (Number.isInteger(n) && n >= min && n <= max && val === n) return true;
-    }
+    const match = /^(\*|\d+)(?:-(\d+))?(?:\/(\d+))?$/.exec(part);
+    if (!match || (match[1] === '*' && match[2])) throw Error();
+    const start = match[1] === '*' ? min : Number(match[1]);
+    const end = match[2] ? Number(match[2]) : (match[1] === '*' || match[3] ? max : start);
+    const step = Number(match[3] ?? 1);
+    if (start < min || end > max || end < start || !Number.isSafeInteger(step) || step < 1) throw Error();
+    for (let n = start; n <= end; n += step) values.add(n);
   }
-  return false;
+  return values;
 }
 
-function getNextRuns(cronExpr: string, count = 5): { runs: Date[]; error?: string } {
-  const parts = cronExpr.trim().split(/\s+/);
-  if (parts.length !== 5) {
-    return { runs: [], error: '5필드 크론 표현식을 입력해 주세요 (분 시 일 월 요일).' };
-  }
-  const [mExp, hExp, domExp, monExp, dowExp] = parts;
-  const runs: Date[] = [];
-  const cur = new Date();
-  cur.setSeconds(0, 0);
-  cur.setMinutes(cur.getMinutes() + 1);
-
-  const limit = 60 * 24 * 366; // up to 1 year search
-  for (let i = 0; i < limit && runs.length < count; i++) {
-    if (
-      matchField(mExp, cur.getMinutes(), 0, 59) &&
-      matchField(hExp, cur.getHours(), 0, 23) &&
-      matchField(domExp, cur.getDate(), 1, 31) &&
-      matchField(monExp, cur.getMonth() + 1, 1, 12) &&
-      matchField(dowExp, cur.getDay(), 0, 6)
-    ) {
-      runs.push(new Date(cur.getTime()));
+function getNextRuns(expr: string, count: number): { runs: Date[]; error?: string } {
+  try {
+    const parts = expr.trim().split(/\s+/);
+    if (parts.length !== 5 || expr.length > 256) throw Error();
+    const [minutes, hours, dates, months, weekdays] = [[0,59],[0,23],[1,31],[1,12],[0,6]]
+      .map(([lo, hi], i) => field(parts[i], lo, hi));
+    const now = new Date();
+    const day = new Date(now);
+    day.setHours(0, 0, 0, 0);
+    const runs: Date[] = [];
+    for (let i = 0; i < 366 && runs.length < count; i++, day.setDate(day.getDate() + 1)) {
+      const dom = dates.has(day.getDate()), dow = weekdays.has(day.getDay());
+      const dayMatches = parts[2].startsWith('*') || parts[4].startsWith('*') ? dom && dow : dom || dow;
+      if (!months.has(day.getMonth() + 1) || !dayMatches) continue;
+      for (const hour of [...hours].sort((a,b) => a-b)) {
+        for (const minute of [...minutes].sort((a,b) => a-b)) {
+          const time = new Date(day);
+          time.setHours(hour, minute);
+          if (time > now && time.getHours() === hour) runs.push(time);
+          if (runs.length === count) return { runs };
+        }
+      }
     }
-    cur.setMinutes(cur.getMinutes() + 1);
-  }
-  return { runs };
+    return runs.length ? { runs } : { runs, error: '앞으로 1년 안에 실행 시각이 없습니다.' };
+  } catch { return { runs: [], error: '5개 필드의 범위, 목록 및 간격을 확인해 주세요.' }; }
 }
 
 export default function HaCronTool() {
@@ -63,8 +58,9 @@ export default function HaCronTool() {
 
   const parts = expr.trim().split(/\s+/);
   const haYaml =
-    parts.length === 5
-      ? `trigger:\n  - platform: time_pattern\n    minutes: "${parts[0]}"\n    hours: "${parts[1]}"`
+    !error && parts.length === 5 && parts.slice(2).every(p => p === '*') &&
+    parts.slice(0, 2).every(p => /^(\*|\d+|\*\/\d+)$/.test(p))
+      ? `trigger:\n  - platform: time_pattern\n    minutes: "${parts[0].replace("*/", "/")}"\n    hours: "${parts[1].replace("*/", "/")}"`
       : '';
 
   return (
@@ -123,6 +119,7 @@ export default function HaCronTool() {
               <span className="text-xs font-semibold text-slate-500">HA time_pattern 트리거 참고</span>
               <CopyButton text={haYaml} />
             </div>
+            {!haYaml && <p>이 일정에는 별도 HA 조건이 필요합니다.</p>}
             <pre className="p-3 rounded-lg bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto">{haYaml}</pre>
           </div>
         </div>

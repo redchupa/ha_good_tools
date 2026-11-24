@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Maximize2, Power, AlertTriangle } from 'lucide-react';
 
 const PRESETS = [
@@ -15,19 +15,15 @@ export default function FlashlightTool() {
   const [brightness, setBrightness] = useState(100);
   const [mode, setMode] = useState<'solid' | 'strobe' | 'sos'>('solid');
   const [blinkState, setBlinkState] = useState(true);
-  const wakeLockRef = useRef<any>(null);
-
   useEffect(() => {
-    if (!on) {
-      wakeLockRef.current?.release?.().catch(() => {});
-      wakeLockRef.current = null;
-      return;
-    }
-    if ('wakeLock' in navigator) {
-      (navigator as any).wakeLock.request('screen').then((lock: any) => {
-        wakeLockRef.current = lock;
-      }).catch(() => {});
-    }
+    if (!on || !('wakeLock' in navigator)) return;
+    let disposed = false;
+    let lock: WakeLockSentinel | undefined;
+    navigator.wakeLock.request('screen').then(handle => {
+      if (disposed) return handle.release();
+      lock = handle;
+    }).catch(() => {});
+    return () => { disposed = true; lock?.release().catch(() => {}); };
   }, [on]);
 
   useEffect(() => {

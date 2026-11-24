@@ -20,12 +20,13 @@ export default function PostcodeTool() {
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
+    let active = true;
     const mountWidget = () => {
-      if (!window.daum?.Postcode || !containerRef.current) return;
+      if (!active || !window.daum?.Postcode || !containerRef.current) return;
       containerRef.current.innerHTML = '';
       new window.daum.Postcode({
         oncomplete: (data) => {
-          setSelected(data);
+          if (active) setSelected(data);
         },
         width: '100%',
         height: '460px',
@@ -35,7 +36,7 @@ export default function PostcodeTool() {
 
     if (window.daum?.Postcode) {
       mountWidget();
-      return;
+      return () => { active = false; };
     }
 
     const script = document.createElement('script');
@@ -44,6 +45,12 @@ export default function PostcodeTool() {
     script.onload = mountWidget;
     script.onerror = () => setError('다음 우편번호 스크립트를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
     document.body.appendChild(script);
+    return () => {
+      active = false;
+      script.onload = null;
+      script.onerror = null;
+      script.remove();
+    };
   }, []);
 
   return (

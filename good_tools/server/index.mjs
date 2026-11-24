@@ -13,12 +13,18 @@ export function createApp(options = {}) {
   const allowNetworkTools =
     options.allowNetworkTools ?? (process.env.ALLOW_NETWORK_TOOLS !== 'false');
   const allowLanTools =
-    options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS !== 'false');
+    options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS === 'true');
   const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
-  const appVersion = options.appVersion || process.env.APP_VERSION || '1.1.0';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.3.3';
 
   const app = express();
   app.disable('x-powered-by');
+  if (process.env.INGRESS_ONLY === 'true') {
+    app.use((req, res, next) => {
+      if (req.socket.remoteAddress !== '172.30.32.2') return res.sendStatus(403);
+      next();
+    });
+  }
   app.use(express.json({ limit: '2mb' }));
 
   // Basic security headers (Ingress iframe-compatible)

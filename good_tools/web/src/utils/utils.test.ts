@@ -1,3 +1,4 @@
+import { parseCsv } from './csv';
 import { describe, it, expect } from 'vitest';
 import { engToKor, korToEng } from './engKor';
 import { parseSmi, parseSrtOrVtt, cuesToSrt, cuesToVtt, shiftCues } from './subtitle';
@@ -62,4 +63,21 @@ describe('crypto & network helpers', () => {
     expect(generateUlid()).toHaveLength(26);
     expect(generateNanoId(21)).toHaveLength(21);
   });
+});
+
+describe('CSV import', () => {
+  it('preserves quoted delimiters, embedded CRLF, and escaped quotes', () => {
+    expect(parseCsv('room,note\r\n"a,b","line 1\r\n""2"""')).toEqual([
+      { room: 'a,b', note: 'line 1\r\n"2"' },
+    ]);
+  });
+  it('rejects incomplete records and parses tab-separated records', () => {
+    expect(() => parseCsv('a,b\n"unfinished')).toThrow();
+    expect(parseCsv('a\tb\nx\ty')).toEqual([{ a: 'x', b: 'y' }]);
+  });
+});
+
+it('rejects fractional prefixes and missing IPv4 octets', () => {
+  expect(() => calculateSubnet('192..1.1', 24)).toThrow();
+  expect(() => calculateSubnet('192.168.1.1', 24.5)).toThrow();
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import beautify from 'js-beautify';
+import { format } from 'prettier/standalone';
 import { format as formatSql } from 'sql-formatter';
 import yaml from 'js-yaml';
 import { Sparkles } from 'lucide-react';
@@ -14,18 +14,18 @@ export default function CodeBeautifyTool() {
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
 
-  const runFormat = () => {
+  const runFormat = async () => {
     setError('');
     try {
       let res = '';
       if (lang === 'json') {
         res = JSON.stringify(JSON.parse(input), null, indent);
       } else if (lang === 'js') {
-        res = beautify.js(input, { indent_size: indent });
+        res = await format(input, { parser: 'babel', tabWidth: indent, plugins: await Promise.all([import('prettier/plugins/babel'), import('prettier/plugins/estree')]) });
       } else if (lang === 'html') {
-        res = beautify.html(input, { indent_size: indent });
+        res = await format(input, { parser: 'html', tabWidth: indent, plugins: [await import('prettier/plugins/html')] });
       } else if (lang === 'css') {
-        res = beautify.css(input, { indent_size: indent });
+        res = await format(input, { parser: 'css', tabWidth: indent, plugins: [await import('prettier/plugins/postcss')] });
       } else if (lang === 'sql') {
         res = formatSql(input, { tabWidth: indent });
       } else if (lang === 'yaml') {

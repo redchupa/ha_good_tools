@@ -1,9 +1,10 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { isPrivateIp, assertSafePublicUrl } from '../utils/ssrf.mjs';
+import { isPrivateIp, assertSafePublicUrl, requestPublic } from '../utils/ssrf.mjs';
 import { buildMagicPacket } from '../utils/lan.mjs';
 import { createApp } from '../index.mjs';
 
@@ -19,6 +20,18 @@ describe('SSRF protection', () => {
     assert.equal(isPrivateIp('::ffff:192.168.1.1'), true);
     assert.equal(isPrivateIp('8.8.8.8'), false);
     assert.equal(isPrivateIp('1.1.1.1'), false);
+  });
+
+  it('connects to a selected address and preserves the HTTP authority', async () => {
+    const fixture = http.createServer((req, res) => res.end(req.headers.host));
+    await new Promise(resolve => fixture.listen(0, '127.0.0.1', resolve));
+    try {
+      const url = new URL('http://fixture.invalid:' + fixture.address().port);
+      const response = await requestPublic({ url, address: '127.0.0.1' }, { method: 'GET' });
+      assert.equal(await response.text(), url.host);
+    } finally {
+      await new Promise(resolve => fixture.close(resolve));
+    }
   });
 
   it('rejects localhost, private IPs, and non-http protocols', async () => {
@@ -131,6 +144,35 @@ describe('API routes', () => {
     const delRes = await fetch(`${baseUrl}/api/clipboard/${item.id}`, { method: 'DELETE' });
     const after = await delRes.json();
     assert.equal(after.items.length, 0);
+  });
+
+  it('keeps concurrent notes and independent preferences', async () => {
+    const send = (route, method, body) => fetch(baseUrl + route, {
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const results = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+      send('/api/clipboard', 'POST', { content: 'note ' + i })));
+    assert.ok(results.every(r => r.status === 201));
+    const { items } = await (await fetch(baseUrl + '/api/clipboard')).json();
+    assert.equal(new Set(items.map(i => i.content)).size, 8);
+    await Promise.all([
+      send('/api/prefs', 'PUT', { lang: 'ko' }),
+      send('/api/prefs', 'PUT', { theme: 'dark' }),
+    ]);
+    const prefs = await (await fetch(baseUrl + '/api/prefs')).json();
+    assert.equal(prefs.lang, 'ko');
+    assert.equal(prefs.theme, 'dark');
+  });
+
+  it('preserves unreadable data and continues serving after a write failure', async () => {
+    const file = path.join(tempDir, 'clipboard.json');
+    await fs.writeFile(file, 'corrupt');
+    const response = await fetch(baseUrl + '/api/clipboard', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'note' }),
+    });
+    assert.equal(response.status, 500);
+    assert.equal(await fs.readFile(file, 'utf8'), 'corrupt');
+    assert.equal((await fetch(baseUrl + '/api/health')).status, 200);
   });
 
   it('validates WoL magic packet and blocks SSRF on /api/ssl-check', async () => {

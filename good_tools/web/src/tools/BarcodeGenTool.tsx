@@ -1,3 +1,4 @@
+import { downloadBlob } from '../utils/download';
 import { useEffect, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
@@ -53,10 +54,7 @@ export default function BarcodeGenTool() {
     if (!svgRef.current) return;
     const xml = new XMLSerializer().serializeToString(svgRef.current);
     const blob = new Blob([xml], { type: 'image/svg+xml' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `barcode-${bcFormat}.svg`;
-    a.click();
+    downloadBlob(blob, `barcode-${bcFormat}.svg`);
   };
 
   return (

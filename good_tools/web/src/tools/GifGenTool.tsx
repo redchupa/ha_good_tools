@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GIFEncoder, quantize, applyPalette } from 'gifenc';
 import { Upload, Download, Trash2, ArrowUp, ArrowDown, Play } from 'lucide-react';
 
@@ -15,12 +15,30 @@ export default function GifGenTool() {
   const [gifUrl, setGifUrl] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const urls = useRef(new Set<string>());
+  const active = useRef(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      urls.current.forEach(url => URL.revokeObjectURL(url));
+      urls.current.clear();
+    };
+  }, []);
+  useEffect(() => () => { if (gifUrl) URL.revokeObjectURL(gifUrl); }, [gifUrl]);
   const handleFiles = (fileList: FileList | null) => {
     if (!fileList) return;
+    if (fileList.length + frames.length > 32 || Array.from(fileList).some(f => f.size > 8 * 1024 * 1024)) {
+      return setError('GIF는 최대 32장, 장당 8 MiB까지 지원합니다.');
+    }
+    setError('');
     const added: FrameItem[] = [];
     for (const f of Array.from(fileList)) {
       if (!f.type.startsWith('image/')) continue;
-      added.push({ id: `${Date.now()}-${Math.random()}`, name: f.name, url: URL.createObjectURL(f) });
+      const url = URL.createObjectURL(f);
+      urls.current.add(url);
+      added.push({ id: `${Date.now()}-${Math.random()}`, name: f.name, url });
     }
     setFrames((prev) => [...prev, ...added]);
   };
@@ -37,28 +55,25 @@ export default function GifGenTool() {
     if (frames.length < 2) return;
     setBusy(true);
     try {
-      const imgs = await Promise.all(
-        frames.map(
-          (f) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = f.url;
-            })
-        )
-      );
-
-      const first = imgs[0];
+      const loadImage = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
+      const first = await loadImage(frames[0].url);
       const targetW = Math.min(width, 960);
       const targetH = Math.round((first.height / first.width) * targetW);
+      if (targetW * targetH > 2000000) throw new Error();
       const canvas = document.createElement('canvas');
       canvas.width = targetW;
       canvas.height = targetH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
       const gif = GIFEncoder();
-      for (const img of imgs) {
+      for (const [indexInList, frame] of frames.entries()) {
+        if (!active.current) return;
+        const img = indexInList === 0 ? first : await loadImage(frame.url);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, targetW, targetH);
         ctx.drawImage(img, 0, 0, targetW, targetH);
@@ -70,8 +85,10 @@ export default function GifGenTool() {
       gif.finish();
 
       const blob = new Blob([gif.bytes()], { type: 'image/gif' });
-      if (gifUrl) URL.revokeObjectURL(gifUrl);
+      if (!active.current) return;
       setGifUrl(URL.createObjectURL(blob));
+    } catch {
+      setError('GIF를 만들 수 없습니다. 이미지 크기와 형식을 확인해 주세요.');
     } finally {
       setBusy(false);
     }
@@ -86,6 +103,7 @@ export default function GifGenTool() {
         <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
       </label>
 
+      {error && <p role="alert">{error}</p>}
       {frames.length > 0 && (
         <>
           <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
@@ -117,7 +135,7 @@ export default function GifGenTool() {
                   <div className="flex items-center gap-0.5">
                     <button type="button" onClick={() => moveFrame(idx, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><ArrowUp className="w-3 h-3" /></button>
                     <button type="button" onClick={() => moveFrame(idx, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"><ArrowDown className="w-3 h-3" /></button>
-                    <button type="button" onClick={() => setFrames(frames.filter((x) => x.id !== f.id))} className="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15 rounded"><Trash2 className="w-3 h-3" /></button>
+                    <button type="button" onClick={() => { URL.revokeObjectURL(f.url); urls.current.delete(f.url); setFrames(frames.filter(x => x.id !== f.id)); }} className="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15 rounded"><Trash2 className="w-3 h-3" /></button>
                   </div>
                 </div>
               </div>

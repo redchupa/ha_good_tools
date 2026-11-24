@@ -1,3 +1,5 @@
+import { previewDocument } from '../utils/preview';
+import { downloadBlob } from '../utils/download';
 import { useState } from 'react';
 import PostalMime, { type Email } from 'postal-mime';
 import { Upload, Paperclip, Download } from 'lucide-react';
@@ -10,6 +12,7 @@ export default function EmlViewerTool() {
   const handleFile = async (file: File) => {
     setError('');
     try {
+      if (file.size > 16 * 1024 * 1024) throw new Error('EML은 16 MiB까지 지원합니다.');
       const parser = new PostalMime();
       const parsed = await parser.parse(await file.arrayBuffer());
       setEmail(parsed);
@@ -22,10 +25,7 @@ export default function EmlViewerTool() {
   const downloadAttachment = (att: Email['attachments'][number]) => {
     const data = att.content instanceof ArrayBuffer ? new Uint8Array(att.content) : new TextEncoder().encode(String(att.content));
     const blob = new Blob([data], { type: att.mimeType || 'application/octet-stream' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = att.filename || 'attachment';
-    a.click();
+    downloadBlob(blob, att.filename || 'attachment');
   };
 
   return (
@@ -103,7 +103,7 @@ export default function EmlViewerTool() {
             <iframe
               title="EML Body"
               sandbox=""
-              srcDoc={email.html}
+              srcDoc={previewDocument(email.html)}
               className="w-full h-[460px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white"
             />
           ) : (

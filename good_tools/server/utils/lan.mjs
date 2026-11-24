@@ -1,7 +1,8 @@
+import dns from 'node:dns/promises';
 import dgram from 'node:dgram';
 import net from 'node:net';
 import tls from 'node:tls';
-import { assertSafePublicUrl } from './ssrf.mjs';
+import { resolvePublicTarget, requestPublic } from './ssrf.mjs';
 
 export function buildMagicPacket(macAddress) {
   const clean = String(macAddress || '').trim().replace(/[:-]/g, '');
@@ -16,10 +17,19 @@ export function buildMagicPacket(macAddress) {
   return packet;
 }
 
+function isLanAddress(ip) {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number);
+    return a === 10 || a === 192 && b === 168 || a === 172 && b >= 16 && b <= 31;
+  }
+  return net.isIPv6(ip) && /^f[cd]/i.test(ip);
+}
+
 export async function sendWakeOnLan(macAddress, broadcastIp = '255.255.255.255', port = 9) {
+  if (typeof macAddress !== 'string') throw new Error('MAC 주소를 입력해 주세요.');
   const packet = buildMagicPacket(macAddress);
   const ip = String(broadcastIp || '255.255.255.255').trim();
-  if (!net.isIPv4(ip)) {
+  if (!net.isIPv4(ip) || !(ip === '255.255.255.255' || isLanAddress(ip))) {
     throw new Error('브로드캐스트 주소는 올바른 IPv4 형식이어야 합니다.');
   }
   const p = Number(port);
@@ -34,7 +44,13 @@ export async function sendWakeOnLan(macAddress, broadcastIp = '255.255.255.255',
       reject(err);
     });
     socket.bind(() => {
-      socket.setBroadcast(true);
+      try {
+        socket.setBroadcast(true);
+      } catch (err) {
+        socket.close();
+        reject(err);
+        return;
+      }
       socket.send(packet, 0, packet.length, p, ip, (err) => {
         socket.close();
         if (err) reject(err);
@@ -54,6 +70,10 @@ export async function checkTcpPort(host, port, timeoutMs = 2500) {
     throw new Error('포트는 1~65535 사이의 정수여야 합니다.');
   }
 
+  const records = net.isIP(h) ? [{ address: h }] : await dns.lookup(h, { all: true });
+  if (!records.length || records.some(record => !isLanAddress(record.address))) {
+    throw new Error('LAN의 사설 주소만 점검할 수 있습니다.');
+  }
   const start = Date.now();
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -69,29 +89,31 @@ export async function checkTcpPort(host, port, timeoutMs = 2500) {
     socket.once('connect', () => finish(true));
     socket.once('timeout', () => finish(false, '연결 시간 초과'));
     socket.once('error', (err) => finish(false, err.code || err.message));
-    socket.connect(p, h);
+    socket.connect(p, records[0].address);
   });
 }
 
 export async function inspectSsl(rawHost, port = 443) {
-  const cleanHost = String(rawHost || '').trim().replace(/^https?:\/\//i, '').split('/')[0].split(':')[0];
-  const p = Number(port) || 443;
+  const input = String(rawHost || '').trim();
+  const authority = net.isIPv6(input) ? '[' + input + ']' : input.replace(/^https?:\/\//i, '');
+  const cleanHost = new URL('https://' + authority).hostname;
+  const p = Number(port);
   if (!cleanHost) throw new Error('도메인을 입력해 주세요.');
   if (!Number.isInteger(p) || p < 1 || p > 65535) throw new Error('올바른 포트 번호가 아닙니다.');
 
   // Enforce SSRF protection on target host
-  await assertSafePublicUrl(`https://${cleanHost}`);
+  const target = await resolvePublicTarget(`https://${cleanHost}:${p}`);
 
   const certInfo = await new Promise((resolve, reject) => {
     const socket = tls.connect(
-      { host: cleanHost, port: p, servername: cleanHost, rejectUnauthorized: false, timeout: 8000 },
+      { host: target.address, port: p, servername: net.isIP(cleanHost.replace(/^\[|\]$/g, '')) ? undefined : cleanHost, rejectUnauthorized: false, timeout: 8000 },
       () => {
         const cert = socket.getPeerCertificate(false);
         const authorized = socket.authorized;
         const authError = socket.authorizationError;
         const protocol = socket.getProtocol();
         const cipher = socket.getCipher();
-        socket.end();
+        socket.destroy();
 
         if (!cert || !Object.keys(cert).length) {
           return reject(new Error('서버에서 TLS 인증서를 반환하지 않았습니다.'));
@@ -131,9 +153,8 @@ export async function inspectSsl(rawHost, port = 443) {
   let securityHeaders = {};
   let httpStatus = null;
   try {
-    const resp = await fetch(`https://${cleanHost}${p !== 443 ? `:${p}` : ''}`, {
+    const resp = await requestPublic(target, {
       method: 'HEAD',
-      redirect: 'follow',
       signal: AbortSignal.timeout(6000),
     });
     httpStatus = resp.status;

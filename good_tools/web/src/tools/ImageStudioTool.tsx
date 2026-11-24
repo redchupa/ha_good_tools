@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Upload, Download, ShieldCheck } from 'lucide-react';
 
 export default function ImageStudioTool() {
@@ -10,56 +10,49 @@ export default function ImageStudioTool() {
   const [outUrl, setOutUrl] = useState('');
   const [outSize, setOutSize] = useState(0);
 
-  const handleFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setSrcUrl(url);
-    const img = new Image();
-    img.onload = () => {
-      setOrigMeta({ name: file.name, w: img.width, h: img.height, size: file.size });
-      processImage(img, format, quality, scalePct);
-    };
-    img.src = url;
-  };
+  const [error, setError] = useState('');
+  const [source, setSource] = useState<File | null>(null);
+  const revision = useRef(0);
+  useEffect(() => () => { if (srcUrl) URL.revokeObjectURL(srcUrl); }, [srcUrl]);
+  useEffect(() => () => { if (outUrl) URL.revokeObjectURL(outUrl); }, [outUrl]);
 
-  const processImage = (
-    img: HTMLImageElement,
-    fmt: 'image/webp' | 'image/jpeg' | 'image/png',
-    q: number,
-    pct: number
-  ) => {
-    const w = Math.max(1, Math.round((img.width * pct) / 100));
-    const h = Math.max(1, Math.round((img.height * pct) / 100));
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d')!;
-    if (fmt === 'image/jpeg') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-    }
-    ctx.drawImage(img, 0, 0, w, h);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        if (outUrl) URL.revokeObjectURL(outUrl);
+  const handleFile = (file: File) => {
+    if (file.size > 16 * 1024 * 1024) return setError('이미지는 16 MiB까지 지원합니다.');
+    setSource(file);
+    setSrcUrl(URL.createObjectURL(file));
+  };
+  useEffect(() => {
+    if (!source || !srcUrl) return;
+    const token = ++revision.current;
+    const img = new Image();
+    setError('');
+    setOutUrl('');
+    img.onerror = () => setError('이미지를 읽을 수 없습니다.');
+    img.onload = () => {
+      setOrigMeta({ name: source.name, w: img.width, h: img.height, size: source.size });
+      const w = Math.max(1, Math.round(img.width * scalePct / 100));
+      const h = Math.max(1, Math.round(img.height * scalePct / 100));
+      if (w * h > 16000000 || Math.max(w,h) > 8192) return setError('출력 크기를 줄여 주세요.');
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return setError('이미지 메모리가 부족합니다.');
+      if (format === 'image/jpeg') {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if (revision.current !== token) return;
+        if (!blob) return setError('이미지 변환에 실패했습니다.');
         setOutUrl(URL.createObjectURL(blob));
         setOutSize(blob.size);
-      },
-      fmt,
-      q
-    );
-  };
-
-  const reprocess = (
-    nextFmt = format,
-    nextQ = quality,
-    nextPct = scalePct
-  ) => {
-    if (!srcUrl) return;
-    const img = new Image();
-    img.onload = () => processImage(img, nextFmt, nextQ, nextPct);
+      }, format, quality);
+    };
     img.src = srcUrl;
-  };
+    return () => { revision.current++; img.onload = null; img.onerror = null; };
+  }, [srcUrl, source, format, quality, scalePct]);
 
   const ext = format === 'image/webp' ? 'webp' : format === 'image/jpeg' ? 'jpg' : 'png';
   const savedPct = origMeta && outSize ? Math.round(((origMeta.size - outSize) / origMeta.size) * 100) : 0;
@@ -75,6 +68,7 @@ export default function ImageStudioTool() {
         <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
       </label>
 
+      {error && <p role="alert">{error}</p>}
       {origMeta && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
@@ -85,7 +79,7 @@ export default function ImageStudioTool() {
                 onChange={(e) => {
                   const f = e.target.value as 'image/webp' | 'image/jpeg' | 'image/png';
                   setFormat(f);
-                  reprocess(f, quality, scalePct);
+
                 }}
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
               >
@@ -105,7 +99,7 @@ export default function ImageStudioTool() {
                 onChange={(e) => {
                   const q = Number(e.target.value);
                   setQuality(q);
-                  reprocess(format, q, scalePct);
+
                 }}
                 className="w-full"
               />
@@ -123,7 +117,7 @@ export default function ImageStudioTool() {
                 onChange={(e) => {
                   const p = Number(e.target.value);
                   setScalePct(p);
-                  reprocess(format, quality, p);
+
                 }}
                 className="w-full"
               />

@@ -95,11 +95,8 @@ export default function GameReactionTool() {
     <div className="space-y-5 max-w-xl mx-auto">
       <button
         type="button"
-        onMouseDown={handleTap}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          handleTap();
-        }}
+        onPointerDown={e => { if (e.isPrimary && e.button === 0) handleTap(); }}
+        onClick={e => { if (e.detail === 0) handleTap(); }}
         className={`w-full h-64 rounded-3xl border-2 flex flex-col items-center justify-center gap-2 transition-all select-none cursor-pointer ${padStyle}`}
       >
         {phase === 'idle' && (

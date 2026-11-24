@@ -17,11 +17,12 @@ export function crc32(bytes: Uint8Array): string {
 }
 
 export function calculateSubnet(ipStr: string, prefix: number) {
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(ipStr.trim())) throw new Error('올바른 IPv4 주소를 입력해 주세요.');
   const parts = ipStr.trim().split('.').map(Number);
   if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) {
     throw new Error('올바른 IPv4 주소를 입력해 주세요 (예: 192.168.1.10)');
   }
-  if (prefix < 0 || prefix > 32) {
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
     throw new Error('CIDR 프리픽스는 0~32 사이여야 합니다.');
   }
 

@@ -6,7 +6,7 @@ import { CopyButton } from '../components/CopyButton';
 export default function CryptoTool() {
   const [tab, setTab] = useState<'aes' | 'hmac' | 'password'>('aes');
   const [text, setText] = useState('Home Assistant Secret Payload');
-  const [secret, setSecret] = useState('my-strong-passphrase-2026');
+  const [secret, setSecret] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
 

@@ -80,7 +80,7 @@ export const TOOLS: ToolMeta[] = [
     id: 'currency-calc',
     name: '나라별 환율 계산기',
     nameEn: 'Currency Converter',
-    shortDesc: '2026년 연평균 환율 기본값 제공, 실제 환율 직접 수정 & 15개국 동시 환산',
+    shortDesc: '예시 환율 기본값 제공, 실제 환율 직접 수정 & 15개국 동시 환산',
     shortDescEn: 'Convert 15 currencies with 2026 average defaults & custom rates',
     category: 'general',
     icon: 'Coins',

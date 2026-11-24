@@ -1,3 +1,4 @@
+import { downloadBlob } from '../utils/download';
 import { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -39,10 +40,7 @@ export default function SubtitleConvTool() {
 
   const downloadOutput = () => {
     const blob = new Blob(['\uFEFF' + output], { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${filename}.${targetFormat}`;
-    a.click();
+    downloadBlob(blob, `${filename}.${targetFormat}`);
   };
 
   return (

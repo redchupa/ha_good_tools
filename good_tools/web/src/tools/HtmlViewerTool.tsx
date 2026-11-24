@@ -1,3 +1,4 @@
+import { previewDocument } from '../utils/preview';
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -114,7 +115,7 @@ export default function HtmlViewerTool() {
           <iframe
             title="Live HTML Preview"
             sandbox=""
-            srcDoc={liveHtml}
+            srcDoc={previewDocument(liveHtml)}
             className="w-full h-[360px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white"
           />
         </div>

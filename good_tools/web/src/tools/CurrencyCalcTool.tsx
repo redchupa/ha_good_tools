@@ -8,10 +8,10 @@ interface CurrencyDef {
   symbol: string;
   flag: string;
   unit: number; // 1 for most, 100 for JPY & VND
-  defaultKrwPerUnit: number; // 2026 average KRW per `unit`
+  defaultKrwPerUnit: number; // illustrative KRW per `unit`
 }
 
-// 2026년 연평균 기준 기본 환율 (실제 환율로 사용자가 자유롭게 수정 가능)
+// 예시 기본 환율 (실제 환율로 사용자가 자유롭게 수정 가능)
 const DEFAULT_CURRENCIES: CurrencyDef[] = [
   { code: 'KRW', name: '대한민국 원', symbol: '₩', flag: '🇰🇷', unit: 1, defaultKrwPerUnit: 1 },
   { code: 'USD', name: '미국 달러', symbol: '$', flag: '🇺🇸', unit: 1, defaultKrwPerUnit: 1415 },
@@ -82,7 +82,7 @@ export default function CurrencyCalcTool() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-        <span>기본값은 2026년 연평균 환율 기준이며, 실제 환율을 직접 수정해 계산할 수 있습니다.</span>
+        <span>기본값은 예시 환율 기준이며, 실제 환율을 직접 수정해 계산할 수 있습니다.</span>
         <div className="flex gap-2">
           <button
             type="button"

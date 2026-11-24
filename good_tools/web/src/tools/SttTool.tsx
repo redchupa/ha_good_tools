@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, ShieldAlert } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
 
@@ -9,6 +9,14 @@ export default function SttTool() {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState('');
   const recRef = useRef<any>(null);
+
+  useEffect(() => () => {
+    const rec = recRef.current;
+    if (rec) {
+      rec.onresult = rec.onerror = rec.onend = null;
+      rec.abort();
+    }
+  }, []);
 
   const SpeechRecognition =
     typeof window !== 'undefined'

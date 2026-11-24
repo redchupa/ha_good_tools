@@ -155,46 +155,29 @@ export function useSyncedPrefs() {
     };
   }, []);
 
-  const persist = useCallback((nextFav: string[], nextHidden: string[], nextLang: LangMode) => {
-    localStorage.setItem('good_tools_favorites', JSON.stringify(nextFav));
-    localStorage.setItem('good_tools_hidden', JSON.stringify(nextHidden));
-    localStorage.setItem('good_tools_lang', nextLang);
+  const persist = useCallback((key: string, storage: string, value: string[] | LangMode) => {
+    localStorage.setItem(storage, typeof value === 'string' ? value : JSON.stringify(value));
     fetch('./api/prefs', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorites: nextFav, hiddenTools: nextHidden, lang: nextLang }),
+      body: JSON.stringify({ [key]: value }),
     }).catch(() => {});
   }, []);
 
-  const toggleFavorite = useCallback(
-    (id: string) => {
-      setFavorites((prev) => {
-        const next = prev.includes(id) ? prev.filter((x) => x !== id) : [id, ...prev];
-        persist(next, hiddenTools, lang);
-        return next;
-      });
-    },
-    [hiddenTools, lang, persist]
-  );
-
-  const toggleHidden = useCallback(
-    (id: string) => {
-      setHiddenTools((prev) => {
-        const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-        persist(favorites, next, lang);
-        return next;
-      });
-    },
-    [favorites, lang, persist]
-  );
-
-  const setLang = useCallback(
-    (nextLang: LangMode) => {
-      setLangState(nextLang);
-      persist(favorites, hiddenTools, nextLang);
-    },
-    [favorites, hiddenTools, persist]
-  );
+  const toggleFavorite = (id: string) => {
+    const next = favorites.includes(id) ? favorites.filter(x => x !== id) : [id, ...favorites];
+    setFavorites(next);
+    persist('favorites', 'good_tools_favorites', next);
+  };
+  const toggleHidden = (id: string) => {
+    const next = hiddenTools.includes(id) ? hiddenTools.filter(x => x !== id) : [...hiddenTools, id];
+    setHiddenTools(next);
+    persist('hiddenTools', 'good_tools_hidden', next);
+  };
+  const setLang = (next: LangMode) => {
+    setLangState(next);
+    persist('lang', 'good_tools_lang', next);
+  };
 
   return { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang };
 }

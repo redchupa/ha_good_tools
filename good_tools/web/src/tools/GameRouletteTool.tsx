@@ -42,7 +42,7 @@ export default function GameRouletteTool() {
 
   const addItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.trim() || items.length >= 12) return;
+    if (spinning || !newItem.trim() || items.length >= 12) return;
     setItems([...items, newItem.trim().slice(0, 14)]);
     setNewItem('');
   };
@@ -135,6 +135,7 @@ export default function GameRouletteTool() {
             <button
               key={title}
               type="button"
+              disabled={spinning}
               onClick={() => {
                 setItems(list);
                 setWinner('');
@@ -155,7 +156,7 @@ export default function GameRouletteTool() {
           />
           <button
             type="submit"
-            disabled={!newItem.trim() || items.length >= 12}
+            disabled={spinning || !newItem.trim() || items.length >= 12}
             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium disabled:opacity-40 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> 추가
@@ -176,6 +177,7 @@ export default function GameRouletteTool() {
               {items.length > 2 && (
                 <button
                   type="button"
+                  disabled={spinning}
                   onClick={() => setItems(items.filter((_, i) => i !== idx))}
                   className="text-slate-400 hover:text-rose-500 cursor-pointer"
                 >
