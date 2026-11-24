@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (2026-11-24)
+
+- **업데이트 즉시 반영 개선**: `index.html`에 `Cache-Control: no-cache, no-store, must-revalidate` 헤더를 적용하여 HA 앱 업데이트 직후 강력 새로고침 없이 새 버전 UI가 바로 로드되도록 개선.
+
 ## 1.1.0 (2026-11-24)
 
 - **Home Assistant 전용 도구 5종 추가**: 가족 공유 클립보드(`/data/clipboard.json`), HA YAML ↔ JSON 검사기, Cron & 스케줄 시뮬레이터, HA Jinja2 템플릿 모음, LAN 포트 점검 & Wake-on-LAN(`allow_lan_tools` 옵션 추가).

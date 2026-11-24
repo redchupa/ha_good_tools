@@ -2,8 +2,8 @@
 
 > **이 문서는 작업 중단(사용량 제한 등) 시 다른 모델이나 세션이 즉시 작업을 이어받을 수 있도록 매 마일스톤마다 갱신됩니다.**
 
-- **최종 갱신 시각**: 2026-11-24 13:14 (KST)
-- **현재 상태**: `v1.1.0 개발·빌드·단위테스트 완료 -> GitHub 릴리즈 및 서브 HA(192.168.1.129) 최종 검증 진행 중`
+- **최종 갱신 시각**: 2026-11-24 13:21 (KST)
+- **현재 상태**: `v1.1.1 전체 완료 (서브 HA 192.168.1.129 신규 14종 도구 + UX 3종 실동작 검증 통과 및 index.html 캐시 개선 반영)`
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (**주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
 
@@ -18,7 +18,7 @@
 - [x] **Step 4**: Home Assistant 전용 도구 5종 (`shared-clipboard`, `ha-yaml-json`, `ha-cron`, `ha-jinja`, `lan-wol`)
 - [x] **Step 5**: 일상·파일·이미지 도구 5종 (`pdf-tools`, `image-studio`, `unit-date-calc`, `regex-tester`, `csv-json`)
 - [x] **Step 6**: 개발자·보안 도구 4종 (`timestamp-conv`, `json-explorer`, `ssl-checker`, `favicon-gen`)
-- [ ] **Step 7**: `v1.1.0` GitHub Release 발행 및 서브 HA(`http://192.168.1.129`) 업데이트·신규 기능 실동작 검증
+- [x] **Step 7**: `v1.1.0` 릴리즈 및 서브 HA(`http://192.168.1.129`) 업데이트·신규 14종 도구 + UX 3종 전 항목 실동작 검증 통과 (`v1.1.1`에 `index.html` no-cache 개선 반영)
 
 ## 검증 명령어
 - 백엔드 테스트: `cd good_tools/server && npm test` (8/8 pass)

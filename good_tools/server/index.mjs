@@ -30,11 +30,23 @@ export function createApp(options = {}) {
 
   app.use('/api', createApiRouter({ dataDir, allowNetworkTools, allowLanTools, defaultTheme, appVersion }));
 
-  // Serve static SPA assets
+  // Serve static SPA assets (never cache index.html so HA app updates appear immediately)
   if (fs.existsSync(publicDir)) {
-    app.use(express.static(publicDir, { index: 'index.html', maxAge: '1h' }));
+    app.use(
+      express.static(publicDir, {
+        index: 'index.html',
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          } else {
+            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+          }
+        },
+      })
+    );
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api/')) return next();
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.join(publicDir, 'index.html'));
     });
   } else {
