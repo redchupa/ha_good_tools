@@ -12,14 +12,18 @@ export function rememberTool(id: string) {
   catch { /* Device storage may be disabled. */ }
 }
 
+export function panelLink(parent: URL, id: string) {
+  const match = parent.pathname.match(/(?:^|\/)([a-zA-Z0-9_]+_good_tools)(?:\/|$)/);
+  const slug = match?.[1] || '47dec900_good_tools';
+  return parent.origin + '/app/' + slug + '?tool=' + encodeURIComponent(id);
+}
+
 export function shareTool(id: string) {
   try {
     if (window.parent === window && !location.pathname.startsWith('/api/hassio_ingress/')) {
       return location.origin + location.pathname + '#/tool/' + encodeURIComponent(id);
     }
-    const parent = new URL(window.parent.location.href);
-    const match = parent.pathname.match(/(?:^|\/)([a-zA-Z0-9_]+_good_tools)(?:\/|$)/);
-    return parent.origin + '/hassio/ingress/' + (match?.[1] || '47dec900_good_tools') + '?tool=' + encodeURIComponent(id);
+    return panelLink(new URL(window.parent.location.href), id);
   } catch { return ''; }
 }
 
