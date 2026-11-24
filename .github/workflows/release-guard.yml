@@ -1,0 +1,31 @@
+name: Release guard
+# The add-on store reads config.yaml from main. A version bump that reaches main before its
+# image exists makes every installation offer an update that cannot be pulled.
+on:
+  pull_request:
+    branches: [main]
+    paths: ['good_tools/config.yaml']
+  push:
+    branches: [main]
+    paths: ['good_tools/config.yaml']
+permissions:
+  contents: read
+jobs:
+  image-exists:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require the published image for the configured version
+        run: |
+          version=$(sed -n 's/^version: "\(.*\)"$/\1/p' good_tools/config.yaml)
+          image=$(sed -n 's/^image: "\(.*\)"$/\1/p' good_tools/config.yaml)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && -n "$image" ]]
+          manifest=$(docker manifest inspect "$image:$version") \
+            || { echo "::error::$image:$version is not published yet. Run 'Package verified sub-HA build' before merging the version bump."; exit 1; }
+          for arch in amd64 arm64 arm; do
+            grep -F "\"architecture\": \"$arch\"" <<< "$manifest" >/dev/null \
+              || { echo "::error::$image:$version has no $arch image."; exit 1; }
+          done
+          echo "$image:$version is published for amd64, arm64 and arm/v7."
