@@ -36,7 +36,7 @@ PDF 합치기나 사진 용량 줄이기, QR코드 만들기, 글자수 세기 �
 
 ## 설치 후 화면
 
-메인 화면에서 원하는 도구를 검색(`Ctrl+K`)하거나 자주 쓰는 것만 즐겨찾기해 둘 수 있습니다. 안 쓰는 도구는 상단 `도구 관리`에서 숨겨두면 화면이 훨씬 깔끔해지고, 즐겨찾기나 숨김 설정은 PC와 휴대폰에 자동으로 같이 반영됩니다.
+도구를 검색하거나 즐겨찾기해 두면 PC와 휴대폰에서 똑같이 보입니다.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-home.png" alt="Good Tools 메인 화면" width="100%"/>
