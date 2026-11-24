@@ -36,7 +36,7 @@ jobs:
       - name: Download verified frontend
         run: |
           grep -Fx "version: \"$VERSION\"" good_tools/config.yaml
-          gh release download "v$VERSION" --repo "$GITHUB_REPOSITORY" -p web-dist.tar.gz
+          gh release download "v$VERSION-rc.1" --repo "$GITHUB_REPOSITORY" -p web-dist.tar.gz
           echo "$DIST_SHA  web-dist.tar.gz" | sha256sum -c -
           mkdir good_tools/web-dist
           tar -xzf web-dist.tar.gz -C good_tools/web-dist
