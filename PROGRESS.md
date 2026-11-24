@@ -7,6 +7,15 @@
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (**주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
 
+## v1.4.1 배포 검증
+
+- 서브 HA에서 백엔드 12/12·프론트 14/14, npm audit 두 범위 0건, 프로덕션 빌드 및 Chromium 모바일 뷰 E2E를 통과했습니다. 초기 JS gzip은 104.45 kB입니다.
+- 실제 Ingress에서 허용된 계정의 엔티티 검색과 Jinja 평가(42), 사용자 목록에서 제거한 후 403, 환율 기준일·응답을 확인했습니다. 알림 서비스는 모의 호출로 고정 대상을 검증했습니다.
+- 격리된 QA 설치에서 1.3.3 백업 → GHCR 1.4.0 업데이트 → 백업 복원 후 1.3.3 health 응답을 확인했습니다. 실제 서브 HA 설치에서도 1.3.3 → 1.4.0 업데이트와 50개 JS 청크를 확인했습니다.
+- 기존 공유 경로의 404를 발견해 1.4.1에서 `/app/<slug>?tool=<id>`로 수정했습니다. 서브 HA 브라우저에서 해당 링크가 체크섬 도구를 선택하는 것을 확인했습니다.
+- 정식 후보 1.4.1의 amd64·arm64·arm/v7 manifest 익명 조회 및 서브 HA GHCR 업데이트를 확인했습니다. 최종 health 1.4.1, Supervisor started, 도구 JS 50개 정상 응답, 실제 앱의 복사 버튼으로 얻은 링크 재접속까지 통과했습니다.
+- 서브 HA 전용 검증 스크립트 및 GitHub Actions 패키징을 분리했습니다. GitHub-hosted runner는 서브 HA 자격 증명을 갖지 않습니다. ARM 하드웨어와 실제 iOS·Android Companion 앱은 검증하지 않았습니다.
+
 ## v1.4.0 제품 개선
 
 서브 HA에서 백엔드 12개, 프론트엔드 13개 테스트 및 TypeScript·Vite 빌드를 확인했습니다. 같은 장비의 Chromium에서 체크섬 벡터·50 MiB 파일 취소·PDF 추출·최근 도구·룰렛 상태를 검증했습니다. 실제 iPhone 및 Android Companion 하드웨어 검증은 후속 항목입니다.
