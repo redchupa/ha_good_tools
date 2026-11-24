@@ -11,9 +11,9 @@ export interface ToolMeta {
 }
 
 export const CATEGORY_LABELS: Record<ToolCategory, { label: string; desc: string }> = {
-  general: { label: '일반 도구', desc: '일상·텍스트·이미지·미디어·생활 유틸리티 (19종)' },
-  developer: { label: '개발자 도구', desc: '코드·인코딩·암호화·색상·네트워크 개발 유틸리티 (12종)' },
-  feed: { label: '웹 / 피드', desc: 'RSS/Atom 피드 및 웹 게시글 리더 (1종)' },
+  general: { label: '일반 도구', desc: '일상·텍스트·이미지·미디어·생활 유틸리티' },
+  developer: { label: '개발자 도구', desc: '코드·인코딩·암호화·색상·네트워크 개발 유틸리티' },
+  feed: { label: '웹 / 피드', desc: 'RSS/Atom 피드 및 웹 게시글 리더' },
 };
 
 export const TOOLS: ToolMeta[] = [

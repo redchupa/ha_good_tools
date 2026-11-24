@@ -38,10 +38,10 @@ export function HomePage({ favorites, toggleFavorite }: HomePageProps) {
             Home Assistant 올인원 유틸리티 스위트
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Good Tools — 32종 온라인 도구 모음
+            Good Tools — 온라인 도구 모음
           </h1>
           <p className="mt-2 text-sm sm:text-base text-blue-100">
-            광고·추적 없이 로컬 Home Assistant 안에서 안전하고 빠르게 동작하는 32가지 일상·개발자·피드 도구입니다.
+            광고·추적 없이 로컬 Home Assistant 안에서 안전하고 빠르게 동작하는 일상·개발자·피드 유틸리티 모음입니다.
           </p>
 
           <div className="mt-5 relative max-w-lg">

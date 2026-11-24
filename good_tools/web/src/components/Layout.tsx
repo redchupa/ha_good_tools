@@ -166,9 +166,9 @@ export function Layout({ children, theme, setTheme, favorites }: LayoutProps) {
       <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500 flex items-center justify-between">
         <span className="inline-flex items-center gap-1">
           <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-          HA App v1.0.0
+          Good Tools
         </span>
-        <span>32 Tools</span>
+        <span>{TOOLS.length} Tools</span>
       </div>
     </div>
   );

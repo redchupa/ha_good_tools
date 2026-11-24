@@ -11,7 +11,7 @@ export DATA_DIR="/data"
 export LOG_LEVEL="${LOG_LEVEL}"
 export ALLOW_NETWORK_TOOLS="${ALLOW_NETWORK_TOOLS}"
 export DEFAULT_THEME="${DEFAULT_THEME}"
-export APP_VERSION="1.0.2"
+export APP_VERSION="1.0.3"
 
 bashio::log.info "Starting Good Tools v${APP_VERSION}..."
 bashio::log.info "  Log level: ${LOG_LEVEL}"
