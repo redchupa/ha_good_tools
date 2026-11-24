@@ -25,7 +25,7 @@ export const TOOL_REQUIREMENTS: Record<string, { needs: Requirement; partial?: b
   tts: [{ needs: 'speech-synthesis' }],
   'barcode-scanner': [{ needs: 'secure-camera', partial: true }],
   'long-url': [{ needs: 'network' }],
-  'ip-info': [{ needs: 'network' }],
+  'ip-info': [{ needs: 'network', partial: true }], // the subnet calculator works offline
   'html-viewer': [{ needs: 'network' }],
   'rss-reader': [{ needs: 'network' }],
   'ssl-checker': [{ needs: 'network' }],

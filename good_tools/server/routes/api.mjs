@@ -74,7 +74,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.5.0' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.5.1' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
@@ -543,13 +543,14 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   const MAX_PINNED = 20;
   const MAX_UNPINNED = 50;
   const clipError = (status, error, extra = {}) => Object.assign(new Error(error), { status, extra });
-  // Pinned notes stay first and are never evicted by the unpinned limit.
+  // Pinned notes stay first and are never evicted. MAX_PINNED only limits new pins, so lists
+  // from earlier versions that already hold more pinned notes keep all of them.
   function normalizeClips(list) {
     const items = list
       .filter(it => it && typeof it === 'object' && typeof it.id === 'string' && typeof it.content === 'string')
       .map(it => ({ ...it, pinned: Boolean(it.pinned), rev: Number.isInteger(it.rev) ? it.rev : 0 }));
     return [
-      ...items.filter(it => it.pinned).slice(0, MAX_PINNED),
+      ...items.filter(it => it.pinned),
       ...items.filter(it => !it.pinned).slice(0, MAX_UNPINNED),
     ];
   }

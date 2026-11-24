@@ -62,6 +62,8 @@ export function createPrefsStore(request: Fetch = (...args) => fetch(...args)) {
   };
   // Changes not yet acknowledged by the server, re-applied on top of every server snapshot.
   let pending: PrefsChange[] = [];
+  // Last copy confirmed by the server; failed changes roll back to it.
+  let confirmed: Prefs = { favorites: state.favorites, hiddenTools: state.hiddenTools, lang: state.lang, theme: state.theme };
   let inflight = 0;
   let started = false;
   const listeners = new Set<() => void>();
@@ -77,12 +79,12 @@ export function createPrefsStore(request: Fetch = (...args) => fetch(...args)) {
     try {
       const r = await request('./api/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change) });
       if (!r.ok) throw Error(String(r.status));
-      const server = fromServer(await r.json(), state);
+      confirmed = fromServer(await r.json(), state);
       pending = pending.filter(c => c !== change);
-      emit({ ...withPending(server), syncError: '' });
+      emit({ ...withPending(confirmed), syncError: '' });
     } catch {
       pending = pending.filter(c => c !== change);
-      emit({ syncError: '설정을 HA에 저장하지 못했습니다. 연결을 확인한 뒤 다시 바꿔 주세요. / Could not save settings to HA.' });
+      emit({ ...withPending(confirmed), syncError: '설정을 HA에 저장하지 못해 이전 상태로 되돌렸습니다. 연결을 확인한 뒤 다시 바꿔 주세요. / Could not save settings to HA; the change was undone.' });
     } finally { inflight--; }
   }
 
@@ -90,15 +92,15 @@ export function createPrefsStore(request: Fetch = (...args) => fetch(...args)) {
     try {
       const r = await request('./api/prefs');
       if (!r.ok) throw Error(String(r.status));
-      const server = fromServer(await r.json(), state);
+      confirmed = fromServer(await r.json(), state);
       const queued = state.loaded ? [] : pending.slice();
-      emit({ ...withPending(server), loaded: true });
+      emit({ ...withPending(confirmed), loaded: true });
       // Changes made before the first response are sent now, on top of the server copy.
       for (const change of queued) void send(change);
     } catch {
-      if (!state.loaded) emit({ loaded: true });
-      const queued = pending.slice();
-      for (const change of queued) void send(change);
+      if (state.loaded) return; // a later refresh failing changes nothing
+      emit({ loaded: true });
+      for (const change of pending.slice()) void send(change);
     }
   }
 

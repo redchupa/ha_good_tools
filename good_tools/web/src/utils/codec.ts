@@ -134,7 +134,17 @@ export const CODECS: Codec[] = [
     id: 'ascii-hex', ko: 'ASCII Hex (문자 코드)', en: 'ASCII hex (character codes)',
     decode: t => {
       const parts = t.trim().replace(/0x|\\x|U\+/gi, ' ').split(/[\s,]+/).filter(Boolean);
-      if (parts.length === 1 && parts[0].length > 2) return parseGroups(parts[0], 16);
+      // One unseparated token is either a byte run ("48656c6c6f") or a single code ("d55c" = 한).
+      // Prefer bytes when they form valid UTF-8, otherwise read it as one character code.
+      if (parts.length === 1 && parts[0].length > 2) {
+        try {
+          const bytes = parseGroups(parts[0], 16);
+          bytesToText(bytes);
+          return bytes;
+        } catch (err) {
+          if (parts[0].length > 6) throw err;
+        }
+      }
       return utf8.encode(parts.map(p => {
         const code = parseInt(p, 16);
         if (!/^[0-9a-f]+$/i.test(p) || code > 0x10ffff) throw new CodecError(`문자 코드가 아닙니다: ${p} / Not a character code.`);
@@ -189,8 +199,14 @@ export function detectCodec(text: string): CodecId | 'jwt' {
   if (/(?:\\u[0-9a-f]{4}|\\u\{[0-9a-f]+\})/i.test(t)) return 'unicode';
   if (/&(?:#x?[0-9a-f]+|[a-z]+);/i.test(t)) return 'html';
   if (/%[0-9a-f]{2}/i.test(t) && !/\s/.test(t)) return 'url';
-  if (/^(?:(?:0x|\\x)?[0-9a-f]{2}[\s:,]*)+$/i.test(t) && t.replace(/0x|\\x|[\s:,]/gi, '').length % 2 === 0) return 'hex';
-  if (t.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(t) && t.length >= 8) return 'base64';
+  // Hex needs separators/prefixes or at least four bytes, so years and short numbers stay plain text.
+  const hexDigits = t.replace(/0x|\\x|[\s:,]/gi, '');
+  if (/^(?:(?:0x|\\x)?[0-9a-f]{2}[\s:,]*)+$/i.test(t) && hexDigits.length % 2 === 0
+    && (hexDigits.length >= 8 || /[\s:,]|0x|\\x/i.test(t))) return 'hex';
+  // Base64 must look encoded (digits, + / or padding) and decode to text, so plain words are not caught.
+  if (t.length % 4 === 0 && t.length >= 8 && /^[A-Za-z0-9+/]+={0,2}$/.test(t) && /[0-9+/=]/.test(t)) {
+    try { bytesToText(fromBase64(t)); return 'base64'; } catch { /* binary or not Base64 */ }
+  }
   if (/^[A-Za-z0-9_-]{16,}$/.test(t) && /[-_]/.test(t)) return 'base64url';
   return 'plain';
 }

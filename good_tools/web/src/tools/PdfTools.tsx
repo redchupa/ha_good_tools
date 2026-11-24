@@ -19,8 +19,9 @@ export default function PdfTools() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ blob:Blob; name:string } | null>(null);
   const worker = useRef<Worker | null>(null);
+  const prepareRun = useRef(0); // bumped by cancel() to stop image preparation
   useEffect(() => () => worker.current?.terminate(), []);
-  const cancel = () => { worker.current?.terminate(); worker.current = null; setBusy(false); };
+  const cancel = () => { prepareRun.current++; worker.current?.terminate(); worker.current = null; setBusy(false); };
   const process = (mode:string, input:File[], name = '') => {
     cancel(); setMsg(''); setResult(null); setProgress(0);
     if (input.reduce((n,f)=>n+f.size,0) > 32*1024*1024) return setMsg('합계 32 MiB 이하의 파일을 선택하세요. / Select up to 32 MiB.');
@@ -44,14 +45,17 @@ export default function PdfTools() {
   // pdf-lib embeds only PNG and JPEG and decodes PNG to full RGBA, so anything else (WebP, GIF,
   // HEIC on Safari) or anything over 4000 px is first re-encoded to JPEG on a canvas.
   const handleImgToPdf = async () => {
+    const id = ++prepareRun.current;
     setBusy(true); setMsg('');
     try {
       const ready: File[] = [];
       for (const file of imgFiles) {
+        if (prepareRun.current !== id) return;
         if (file.type === 'image/jpeg' && file.size < 8 * 1024 * 1024) { ready.push(file); continue; }
         const { canvas } = await drawImage(file, { background: '#ffffff', maxWidth: 4000 });
         ready.push(new File([await canvasToBlob(canvas, 'image/jpeg', 0.92)], file.name + '.jpg', { type: 'image/jpeg' }));
       }
+      if (prepareRun.current !== id) return;
       process('img2pdf', ready, 'images.pdf');
     } catch (e) {
       setBusy(false);
