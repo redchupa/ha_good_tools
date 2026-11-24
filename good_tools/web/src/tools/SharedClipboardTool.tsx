@@ -98,8 +98,16 @@ export default function SharedClipboardTool() {
   };
 
   const togglePin = (it: ClipItem) => run(() => call(`./api/clipboard/${it.id}`, 'PATCH', { pinned: !it.pinned }));
+  // Two taps instead of window.confirm, which some Companion app WebViews never show.
+  const [confirmId, setConfirmId] = useState('');
+  useEffect(() => {
+    if (!confirmId) return;
+    const timer = setTimeout(() => setConfirmId(''), 4000);
+    return () => clearTimeout(timer);
+  }, [confirmId]);
   const remove = (it: ClipItem) => {
-    if (!window.confirm(t(`"${it.title || '메모'}"를 삭제할까요?`, `Delete "${it.title || 'note'}"?`))) return;
+    if (confirmId !== it.id) { setConfirmId(it.id); return; }
+    setConfirmId('');
     run(() => call(`./api/clipboard/${it.id}`, 'DELETE'));
   };
 
@@ -217,10 +225,17 @@ export default function SharedClipboardTool() {
                         className={iconButton + (it.pinned ? ' text-amber-500 bg-amber-50 dark:bg-amber-500/20' : ' text-slate-400 hover:text-amber-500')}>
                         <Pin className="w-3.5 h-3.5" />
                       </button>
-                      <button type="button" title={t('삭제', 'Delete')} aria-label={t('삭제', 'Delete')} onClick={() => remove(it)}
-                        className={iconButton + ' text-slate-400 hover:text-rose-500'}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {confirmId === it.id ? (
+                        <button type="button" onClick={() => remove(it)}
+                          className="px-2 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium cursor-pointer">
+                          {t('삭제 확인', 'Confirm delete')}
+                        </button>
+                      ) : (
+                        <button type="button" title={t('삭제', 'Delete')} aria-label={t('삭제', 'Delete')} onClick={() => remove(it)}
+                          className={iconButton + ' text-slate-400 hover:text-rose-500'}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <pre className="text-xs font-mono whitespace-pre-wrap break-all text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg">{it.content}</pre>

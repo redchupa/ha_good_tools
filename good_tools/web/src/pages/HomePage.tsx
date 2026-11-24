@@ -167,22 +167,22 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                       <h3 className="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
                         {tName(tool)}
                       </h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[11px] text-slate-400">
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
+                        <span className="whitespace-nowrap text-[11px] text-slate-400">
                           {lang === 'en' ? CATEGORY_LABELS[tool.category].labelEn : CATEGORY_LABELS[tool.category].label}
                         </span>
                         {tool.badge === 'network' && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 rounded bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
+                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-[10px] px-1.5 rounded bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
                             <Wifi className="w-2.5 h-2.5" /> {lang === 'en' ? 'Server' : '서버'}
                           </span>
                         )}
                         {tool.badge === 'lan' && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 rounded bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-[10px] px-1.5 rounded bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-300">
                             <Radio className="w-2.5 h-2.5" /> LAN
                           </span>
                         )}
                         {tool.badge === 'https' && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-[10px] px-1.5 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-300">
                             <ShieldAlert className="w-2.5 h-2.5" /> HTTPS
                           </span>
                         )}
@@ -191,7 +191,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                           if (avail.level === 'ok') return null;
                           return (
                             <span title={lang === 'en' ? avail.en : avail.ko}
-                              className={`text-[10px] px-1.5 rounded ${avail.level === 'blocked'
+                              className={`whitespace-nowrap text-[10px] px-1.5 rounded ${avail.level === 'blocked'
                                 ? 'bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300'}`}>
                               {avail.level === 'blocked' ? (lang === 'en' ? 'Unavailable here' : '지금 사용 불가') : (lang === 'en' ? 'Limited' : '일부 제한')}

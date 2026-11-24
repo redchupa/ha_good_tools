@@ -194,6 +194,20 @@ describe('API routes', () => {
     assert.equal(items.at(-1).content, 'link 10');
   });
 
+  it('keeps every pinned note saved by an earlier version', async () => {
+    const legacy = Array.from({ length: 25 }, (_, i) => ({ id: 'p' + i, title: '', content: 'pinned ' + i, tag: '', pinned: true, createdAt: '2026-01-01T00:00:00.000Z' }));
+    await fs.writeFile(path.join(tempDir, 'clipboard.json'), JSON.stringify(legacy));
+    const res = await fetch(baseUrl + '/api/clipboard', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'new' }),
+    });
+    const { items } = await res.json();
+    assert.equal(items.filter(it => it.pinned).length, 25);
+    const extra = await fetch(baseUrl + '/api/clipboard/' + items.at(-1).id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinned: true }),
+    });
+    assert.equal(extra.status, 400);
+  });
+
   it('rejects stale edits and keeps both devices informed', async () => {
     const send = (route, method, body) => fetch(baseUrl + route, {
       method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

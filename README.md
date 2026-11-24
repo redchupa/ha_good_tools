@@ -15,14 +15,20 @@ PDF 합치기나 사진 용량 줄이기, QR코드 만들기, 글자수 세기 �
 - **관공서나 회사에 낼 PDF 서류를 합치거나 나눠야 할 때**  
   여러 장의 PDF를 하나로 합치거나, 필요한 페이지만 골라낼 수 있습니다. 사진 여러 장을 PDF 한 파일로 묶는 것도 됩니다. 파일이 외부 서버로 올라가지 않고 내 브라우저 안에서 바로 처리됩니다.
 
+- **PDF를 사진(JPG·PNG)으로 바꾸거나 사진 형식을 바꿔야 할 때**  
+  `파일 변환기`에서 PDF를 페이지별 JPG·PNG 이미지로 바꾸고, 여러 장은 ZIP 한 파일로 받을 수 있습니다. WebP·SVG 같은 이미지를 JPG·PNG로 바꾸거나 크기를 줄이는 것, 사진 여러 장을 PDF로 묶는 것도 됩니다. 모두 기기 안에서 처리됩니다.
+
 - **블로그나 중고거래에 사진 올리기 전에 용량을 줄이고 싶을 때**  
   이미지 크기를 줄이고 파일 형식을 바꿀 수 있습니다. 변환 과정에서 사진에 들어있는 촬영 위치(GPS)나 카메라 정보도 같이 지워집니다.
 
 - **PC에서 보던 링크나 메모를 휴대폰으로 넘기고 싶을 때**  
-  `가족 공유 클립보드`에 붙여넣어 두면 휴대폰 Home Assistant 앱에서 바로 복사할 수 있습니다. 자주 쓰는 메모는 상단에 고정해 둘 수도 있습니다.
+  `가족 공유 클립보드`에 붙여넣어 두면 휴대폰 Home Assistant 앱에서 바로 복사할 수 있습니다. 자주 쓰는 메모는 상단에 고정하고, 저장한 메모를 고칠 수도 있습니다.
 
 - **집에 손님이 왔을 때 와이파이 비밀번호 알려주기 번거로울 때**  
   `바코드 & QR 생성기`에서 Wi-Fi 이름과 비밀번호를 넣으면 카메라로 찍기만 해도 바로 연결되는 QR코드를 만들어 줍니다.
+
+- **Base64·URL·Hex 같은 인코딩을 풀거나 JWT 내용을 확인할 때**  
+  `인코딩 / JWT 디코더`에서 일반 텍스트, URL, HTML, Base64, Hex, 8진수, 2진수, Unicode, Gzip 등을 서로 바로 변환합니다. 붙여넣은 값의 형식을 자동으로 알아내고, JWT는 만료 시각까지 보여 줍니다.
 
 - **영타로 잘못 친 한글을 되돌리거나 글자수를 세야 할 때**  
   `dkssudgktpdy`처럼 영어로 잘못 친 문장을 다시 치지 않고 바로 한글로 바꿀 수 있고, 자소서나 문서 작성 시 공백 포함/제외 글자수와 바이트도 실시간으로 확인할 수 있습니다.
@@ -47,7 +53,11 @@ PDF 합치기나 사진 용량 줄이기, QR코드 만들기, 글자수 세기 �
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-qr.png" alt="Good Tools 바코드 및 QR 생성기 화면" width="100%"/>
+  <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-converter.png" alt="Good Tools 파일 변환기: PDF를 페이지별 PNG로 변환한 화면" width="100%"/>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/redchupa/ha_good_tools/main/images/screenshot-encoder.png" alt="Good Tools 인코딩 / JWT 디코더: 텍스트를 Base64로 변환한 화면" width="100%"/>
 </p>
 
 ---

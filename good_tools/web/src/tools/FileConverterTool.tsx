@@ -31,8 +31,19 @@ export default function FileConverterTool() {
   const [error, setError] = useState('');
   const run = useRef(0);
 
-  const clearOutputs = () => setOutputs(prev => { prev.forEach(o => URL.revokeObjectURL(o.url)); return []; });
-  useEffect(() => () => { run.current++; setOutputs(prev => { prev.forEach(o => URL.revokeObjectURL(o.url)); return prev; }); }, []);
+  // Object URLs keep their blobs alive, so they are tracked outside React state and released on
+  // reset and when the tool closes (state updaters no longer run after unmount).
+  const urls = useRef(new Set<string>());
+  const clearOutputs = () => {
+    urls.current.forEach(url => URL.revokeObjectURL(url));
+    urls.current.clear();
+    setOutputs([]);
+  };
+  useEffect(() => () => {
+    run.current++;
+    urls.current.forEach(url => URL.revokeObjectURL(url));
+    urls.current.clear();
+  }, []);
 
   const reset = (next: Mode) => {
     run.current++;
@@ -47,7 +58,11 @@ export default function FileConverterTool() {
     clearOutputs();
   };
   const cancel = () => { run.current++; setProgress(null); setError(t('취소했습니다. 만들어진 파일은 아래에 남아 있습니다.', 'Cancelled. Finished files are kept below.')); };
-  const add = (output: Omit<Output, 'url'>) => setOutputs(prev => [...prev, { ...output, url: URL.createObjectURL(output.blob) }]);
+  const add = (output: Omit<Output, 'url'>) => {
+    const url = URL.createObjectURL(output.blob);
+    urls.current.add(url);
+    setOutputs(prev => [...prev, { ...output, url }]);
+  };
 
   async function convert() {
     const id = ++run.current;

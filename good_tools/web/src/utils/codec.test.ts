@@ -21,6 +21,8 @@ describe('codec conversions', () => {
     expect(to('decimal')).toBe('72 105 33');
     expect(to('base64', '한')).toBe('7ZWc');
     expect(to('ascii-hex', '한A')).toBe('d55c 41');
+    expect(convert('d55c', 'ascii-hex', 'plain').output).toBe('한');
+    expect(convert('48656c6c6f', 'ascii-hex', 'plain').output).toBe('Hello');
     expect(to('url', 'a b&c', { ...DEFAULT_OPTIONS, urlPlus: true })).toBe('a+b%26c');
     expect(to('html', '<é>', { ...DEFAULT_OPTIONS, htmlAll: true })).toBe('&lt;&#xE9;&gt;');
     expect(to('unicode', 'A😀')).toBe('\\u0041\\u{1f600}');
@@ -62,6 +64,8 @@ describe('codec conversions', () => {
     expect(detectCodec('01001000 01101001')).toBe('binary');
     expect(detectCodec('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig')).toBe('jwt');
     expect(detectCodec('hello world')).toBe('plain');
+    expect(detectCodec('Password')).toBe('plain');
+    expect(detectCodec('2024')).toBe('plain');
   });
 });
 
