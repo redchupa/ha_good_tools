@@ -14,6 +14,8 @@
 - 서버: 메모 고정 보존(고정 20 + 일반 50), 메모 수정 `PATCH` + `rev` 충돌 409, prefs `PATCH {add, remove}` 병합과 `rev`, 손상 파일 `*.corrupt-<시각>.json` 격리 + `/api/health`의 `recovered`, LAN 점검에서 172.30.32.0/23 제외, HA 403 응답에 본인 사용자 ID.
 - 배포: 같은 버전 재게시 차단, 아키텍처별 QEMU 실행 health·버전 확인 후 태그 생성, 버전 문자열 4곳 일치 검사, `release-guard.yml`(이미지 없는 버전 상향 차단).
 - 서브 HA 검증(작업 트리, SSH 계정 `nrgnc`): 백엔드 16/16, 프론트 21/21, TypeScript·Vite 빌드, npm audit 두 범위 0건, Chromium 모바일 E2E(같은 파일 재선택, 변환기 PDF→PNG·ZIP·PNG→JPG, 인코더, LAN IP HTTP에서 AES 왕복·HMAC·사용 불가 표시) 통과. 초기 JS gzip 106.81 kB.
+- 배포: 워크플로 변경을 먼저 main에 병합(#1) → `verify-release.py`로 `4de132a` 검증(web-dist SHA-256 `7d0f1ac7…105e5c`) → `sub-ha/verified` 상태·`v1.5.0-rc.1` 사전 릴리스 → 패키징 성공(세 아키텍처 QEMU health 1.5.0, Node amd64·aarch64 24.22.3 / armv7 22.23.5) → 익명 manifest amd64·arm64·arm/v7 확인 → `release-guard` 통과 후 #2 병합.
+- 서브 HA 실제 설치: 1.4.1 → 1.5.0 업데이트(업데이트 전 백업 `addon_47dec900_good_tools_1.4.1` 생성), Supervisor started, Ingress health 1.5.0. 1.4.1에서 만든 고정 메모가 `pinned`·`rev 0`으로 유지되고 수정 200·오래된 rev 409, 권한 없는 사용자의 403에 사용자 ID, pdf.js 문자표 응답, 홈 카드 51개와 사용 불가 표시를 확인했습니다. 테스트 메모는 삭제했습니다.
 - SSH 컨테이너에는 Node·npm·Chromium이 기본 설치되어 있지 않습니다. 검증 전에 `sudo apk add nodejs npm chromium`이 필요하며 앱 재시작 시 사라집니다.
 
 ## v1.4.1 배포 검증
