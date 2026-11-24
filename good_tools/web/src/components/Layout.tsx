@@ -281,37 +281,47 @@ export function Layout({
               {themeOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setThemeOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5 z-40">
-                    <div className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-400">
-                      {lang === 'en' ? 'Select Theme' : '테마 선택'}
-                    </div>
-                    {THEME_OPTIONS.map((opt) => {
-                      const active = opt.id === theme;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            setTheme(opt.id);
-                            setThemeOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
-                            active
-                              ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold'
-                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span
-                              className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 shrink-0"
-                              style={{ background: opt.swatch }}
-                            />
-                            <span>{lang === 'en' ? opt.labelEn : opt.label}</span>
-                          </span>
-                          {active && <Check className="w-3.5 h-3.5" />}
-                        </button>
-                      );
-                    })}
+                  <div className="absolute right-0 mt-2 w-60 max-h-[75vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-40 space-y-2">
+                    {(
+                      [
+                        ['basic', lang === 'en' ? 'Basic' : '기본'],
+                        ['cute', lang === 'en' ? 'Cute & Pretty' : '귀엽고 예쁜 테마'],
+                        ['futuristic', lang === 'en' ? 'Futuristic · Robot · Dark' : '미래 · 로봇 · 감성 다크'],
+                      ] as const
+                    ).map(([groupKey, groupTitle]) => (
+                      <div key={groupKey}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                          {groupTitle}
+                        </div>
+                        {THEME_OPTIONS.filter((o) => o.group === groupKey).map((opt) => {
+                          const active = opt.id === theme;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => {
+                                setTheme(opt.id);
+                                setThemeOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                                active
+                                  ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold'
+                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                <span
+                                  className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 shrink-0"
+                                  style={{ background: opt.swatch }}
+                                />
+                                <span>{lang === 'en' ? opt.labelEn : opt.label}</span>
+                              </span>
+                              {active && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </>
               )}

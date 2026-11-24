@@ -5,33 +5,53 @@ export type ThemeMode =
   | 'light'
   | 'dark'
   | 'ha-blue'
-  | 'ocean'
-  | 'forest'
   | 'sunset'
   | 'lavender'
-  | 'rose-dark';
+  | 'peach-cute'
+  | 'mint-cream'
+  | 'sakura'
+  | 'ocean'
+  | 'forest'
+  | 'rose-dark'
+  | 'aurora'
+  | 'cyberpunk'
+  | 'mecha-bot';
+
+export type ThemeGroup = 'basic' | 'cute' | 'futuristic';
 
 export interface ThemeOption {
   id: ThemeMode;
   label: string;
   labelEn: string;
+  group: ThemeGroup;
   isDark: boolean | 'auto';
   swatch: string;
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
-  { id: 'system', label: '시스템 자동', labelEn: 'System Auto', isDark: 'auto', swatch: 'linear-gradient(135deg, #f8fafc 50%, #0f172a 50%)' },
-  { id: 'light', label: '라이트', labelEn: 'Crisp Light', isDark: false, swatch: '#4f46e5' },
-  { id: 'dark', label: '다크', labelEn: 'Midnight Dark', isDark: true, swatch: '#0f172a' },
-  { id: 'ha-blue', label: 'HA 블루', labelEn: 'HA Blue', isDark: false, swatch: '#0284c7' },
-  { id: 'sunset', label: '선셋 웜', labelEn: 'Warm Sunset', isDark: false, swatch: '#ea580c' },
-  { id: 'lavender', label: '라벤더', labelEn: 'Soft Lavender', isDark: false, swatch: '#7c3aed' },
-  { id: 'ocean', label: '오션 다크', labelEn: 'Deep Ocean', isDark: true, swatch: '#0369a1' },
-  { id: 'forest', label: '포레스트 다크', labelEn: 'Forest Dark', isDark: true, swatch: '#059669' },
-  { id: 'rose-dark', label: '로즈 다크', labelEn: 'Rose Dark', isDark: true, swatch: '#e11d48' },
+  // 기본
+  { id: 'system', label: '시스템 자동', labelEn: 'System Auto', group: 'basic', isDark: 'auto', swatch: 'linear-gradient(135deg, #f8fafc 50%, #0f172a 50%)' },
+  { id: 'light', label: '라이트', labelEn: 'Crisp Light', group: 'basic', isDark: false, swatch: '#4f46e5' },
+  { id: 'dark', label: '다크', labelEn: 'Midnight Dark', group: 'basic', isDark: true, swatch: '#0f172a' },
+  { id: 'ha-blue', label: 'HA 블루', labelEn: 'HA Blue', group: 'basic', isDark: false, swatch: '#0284c7' },
+
+  // 귀엽고 예쁜 테마
+  { id: 'peach-cute', label: '피치 캔디 (귀여움)', labelEn: 'Peach Candy', group: 'cute', isDark: false, swatch: 'linear-gradient(135deg, #fb7185, #fdba74)' },
+  { id: 'mint-cream', label: '민트 크림 (귀여움)', labelEn: 'Mint Cream', group: 'cute', isDark: false, swatch: 'linear-gradient(135deg, #14b8a6, #6ee7b7)' },
+  { id: 'sakura', label: '벚꽃 블라썸 (예쁨)', labelEn: 'Sakura Blossom', group: 'cute', isDark: false, swatch: 'linear-gradient(135deg, #ec4899, #c084fc)' },
+  { id: 'lavender', label: '라벤더 (예쁨)', labelEn: 'Soft Lavender', group: 'cute', isDark: false, swatch: '#7c3aed' },
+  { id: 'sunset', label: '선셋 웜', labelEn: 'Warm Sunset', group: 'cute', isDark: false, swatch: 'linear-gradient(135deg, #f97316, #ec4899)' },
+
+  // 미래 · 로봇 · 감성 다크 테마
+  { id: 'cyberpunk', label: '사이버 네온 (미래)', labelEn: 'Cyber Neon', group: 'futuristic', isDark: true, swatch: 'linear-gradient(135deg, #06b6d4, #d946ef)' },
+  { id: 'mecha-bot', label: '메카 로봇 (로봇)', labelEn: 'Mecha Robot', group: 'futuristic', isDark: true, swatch: 'linear-gradient(135deg, #334155, #f59e0b)' },
+  { id: 'aurora', label: '오로라 드림 (예쁨)', labelEn: 'Aurora Dream', group: 'futuristic', isDark: true, swatch: 'linear-gradient(135deg, #14b8a6, #7c3aed)' },
+  { id: 'ocean', label: '오션 다크', labelEn: 'Deep Ocean', group: 'futuristic', isDark: true, swatch: '#0369a1' },
+  { id: 'forest', label: '포레스트 다크', labelEn: 'Forest Dark', group: 'futuristic', isDark: true, swatch: '#059669' },
+  { id: 'rose-dark', label: '로즈 다크', labelEn: 'Rose Dark', group: 'futuristic', isDark: true, swatch: '#e11d48' },
 ];
 
-const DARK_THEMES = new Set<ThemeMode>(['dark', 'ocean', 'forest', 'rose-dark']);
+const DARK_THEMES = new Set<ThemeMode>(['dark', 'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot']);
 const VALID_THEMES = new Set<string>(THEME_OPTIONS.map((t) => t.id));
 
 export type LangMode = 'ko' | 'en';
@@ -75,7 +95,6 @@ export function useTheme() {
     }).catch(() => {});
   }, []);
 
-  // Load synced theme from HA /data/prefs.json
   useEffect(() => {
     fetch('./api/prefs')
       .then((r) => (r.ok ? r.json() : null))

@@ -377,7 +377,11 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   });
 
   // 6. User Preferences Sync (/data/prefs.json)
-  const VALID_THEMES = new Set(['system', 'light', 'dark', 'ha-blue', 'ocean', 'forest', 'sunset', 'lavender', 'rose-dark']);
+  const VALID_THEMES = new Set([
+    'system', 'light', 'dark', 'ha-blue', 'sunset', 'lavender',
+    'peach-cute', 'mint-cream', 'sakura',
+    'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot',
+  ]);
 
   router.get('/prefs', async (_req, res) => {
     const prefs = await readJsonFile(prefsFile, { favorites: [], hiddenTools: [], lang: 'ko', theme: defaultTheme });

@@ -1,5 +1,5 @@
 name: "Good Tools"
-version: "1.2.0"
+version: "1.2.1"
 slug: "good_tools"
 description: "Home Assistant에서 바로 사용하는 올인원 온라인 유틸리티 & 개발자 도구 모음"
 url: "https://github.com/redchupa/ha_good_tools"
@@ -27,4 +27,4 @@ schema:
   log_level: list(debug|info|warning|error)
   allow_network_tools: bool
   allow_lan_tools: bool
-  default_theme: list(system|light|dark|ha-blue|sunset|lavender|ocean|forest|rose-dark)
+  default_theme: list(system|light|dark|ha-blue|peach-cute|mint-cream|sakura|lavender|sunset|cyberpunk|mecha-bot|aurora|ocean|forest|rose-dark)

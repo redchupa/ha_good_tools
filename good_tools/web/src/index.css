@@ -17,7 +17,9 @@
   background-image: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #06b6d4 100%);
 }
 
-/* Theme: HA Blue (Home Assistant Official Sky/Cyan Light) */
+/* ===== 밝은 컬러 테마 ===== */
+
+/* HA Blue */
 :root[data-theme="ha-blue"] {
   --color-slate-50: #f0f9ff;
   --color-slate-100: #e0f2fe;
@@ -33,37 +35,7 @@
   background-image: linear-gradient(135deg, #0284c7 0%, #0ea5e9 55%, #22d3ee 100%);
 }
 
-/* Theme: Ocean Dark (Deep Navy + Cyan) */
-:root[data-theme="ocean"] {
-  --color-slate-950: #050f1e;
-  --color-slate-900: #0b1b33;
-  --color-slate-800: #122847;
-  --color-slate-700: #1e3a5f;
-  --color-indigo-400: #38bdf8;
-  --color-indigo-500: #0ea5e9;
-  --color-indigo-600: #0284c7;
-  --color-indigo-700: #0369a1;
-}
-:root[data-theme="ocean"] .hero-banner {
-  background-image: linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #06b6d4 100%);
-}
-
-/* Theme: Forest Dark (Deep Emerald + Mint) */
-:root[data-theme="forest"] {
-  --color-slate-950: #06130f;
-  --color-slate-900: #0c211a;
-  --color-slate-800: #143228;
-  --color-slate-700: #1f473a;
-  --color-indigo-400: #34d399;
-  --color-indigo-500: #10b981;
-  --color-indigo-600: #059669;
-  --color-indigo-700: #047857;
-}
-:root[data-theme="forest"] .hero-banner {
-  background-image: linear-gradient(135deg, #065f46 0%, #059669 55%, #14b8a6 100%);
-}
-
-/* Theme: Sunset Warm (Cozy Paper + Coral/Orange Light) */
+/* Sunset Warm */
 :root[data-theme="sunset"] {
   --color-slate-50: #fdf8f3;
   --color-slate-100: #faeee2;
@@ -79,7 +51,7 @@
   background-image: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #ec4899 100%);
 }
 
-/* Theme: Lavender (Soft Pastel Violet Light) */
+/* Lavender */
 :root[data-theme="lavender"] {
   --color-slate-50: #f8f6ff;
   --color-slate-100: #f0ebff;
@@ -95,7 +67,97 @@
   background-image: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 55%, #d946ef 100%);
 }
 
-/* Theme: Rose Dark (Velvet Dark + Rose/Pink) */
+/* 귀여운 테마: 피치 캔디 (Peach Candy) */
+:root[data-theme="peach-cute"] {
+  --color-slate-50: #fff6f7;
+  --color-slate-100: #ffe8ec;
+  --color-slate-200: #ffd0d9;
+  --color-indigo-50: #fff1f2;
+  --color-indigo-100: #ffe4e6;
+  --color-indigo-400: #fb7185;
+  --color-indigo-500: #f43f5e;
+  --color-indigo-600: #fb7185;
+  --color-indigo-700: #e11d48;
+}
+:root[data-theme="peach-cute"] body {
+  background-image: radial-gradient(#fecdd3 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+:root[data-theme="peach-cute"] .hero-banner {
+  background-image: linear-gradient(135deg, #fb7185 0%, #fda4af 50%, #fdba74 100%);
+  border-radius: 1.5rem;
+}
+
+/* 귀여운 테마: 민트 크림 (Mint Cream) */
+:root[data-theme="mint-cream"] {
+  --color-slate-50: #f2fdfa;
+  --color-slate-100: #dcfcf3;
+  --color-slate-200: #b5f5e5;
+  --color-indigo-50: #f0fdfa;
+  --color-indigo-100: #ccfbf1;
+  --color-indigo-400: #2dd4bf;
+  --color-indigo-500: #14b8a6;
+  --color-indigo-600: #0d9488;
+  --color-indigo-700: #0f766e;
+}
+:root[data-theme="mint-cream"] body {
+  background-image: radial-gradient(#99f6e4 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+:root[data-theme="mint-cream"] .hero-banner {
+  background-image: linear-gradient(135deg, #14b8a6 0%, #34d399 55%, #38bdf8 100%);
+  border-radius: 1.5rem;
+}
+
+/* 예쁜 테마: 벚꽃 블라썸 (Sakura Blossom) */
+:root[data-theme="sakura"] {
+  --color-slate-50: #fdf4f9;
+  --color-slate-100: #fce7f3;
+  --color-slate-200: #f5d0e6;
+  --color-indigo-50: #fdf2f8;
+  --color-indigo-100: #fce7f3;
+  --color-indigo-400: #f472b6;
+  --color-indigo-500: #ec4899;
+  --color-indigo-600: #db2777;
+  --color-indigo-700: #be185d;
+}
+:root[data-theme="sakura"] .hero-banner {
+  background-image: linear-gradient(135deg, #db2777 0%, #f472b6 50%, #c084fc 100%);
+}
+
+/* ===== 어두운 / 미래 / 로봇 테마 ===== */
+
+/* Ocean Dark */
+:root[data-theme="ocean"] {
+  --color-slate-950: #050f1e;
+  --color-slate-900: #0b1b33;
+  --color-slate-800: #122847;
+  --color-slate-700: #1e3a5f;
+  --color-indigo-400: #38bdf8;
+  --color-indigo-500: #0ea5e9;
+  --color-indigo-600: #0284c7;
+  --color-indigo-700: #0369a1;
+}
+:root[data-theme="ocean"] .hero-banner {
+  background-image: linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #06b6d4 100%);
+}
+
+/* Forest Dark */
+:root[data-theme="forest"] {
+  --color-slate-950: #06130f;
+  --color-slate-900: #0c211a;
+  --color-slate-800: #143228;
+  --color-slate-700: #1f473a;
+  --color-indigo-400: #34d399;
+  --color-indigo-500: #10b981;
+  --color-indigo-600: #059669;
+  --color-indigo-700: #047857;
+}
+:root[data-theme="forest"] .hero-banner {
+  background-image: linear-gradient(135deg, #065f46 0%, #059669 55%, #14b8a6 100%);
+}
+
+/* Rose Dark */
 :root[data-theme="rose-dark"] {
   --color-slate-950: #160a10;
   --color-slate-900: #23111a;
@@ -108,6 +170,74 @@
 }
 :root[data-theme="rose-dark"] .hero-banner {
   background-image: linear-gradient(135deg, #9f1239 0%, #e11d48 55%, #f43f5e 100%);
+}
+
+/* 예쁜 테마 (다크): 오로라 드림 (Aurora Dream) */
+:root[data-theme="aurora"] {
+  --color-slate-950: #070b1d;
+  --color-slate-900: #0e1530;
+  --color-slate-800: #172145;
+  --color-slate-700: #263566;
+  --color-indigo-400: #2dd4bf;
+  --color-indigo-500: #14b8a6;
+  --color-indigo-600: #7c3aed;
+  --color-indigo-700: #6d28d9;
+}
+:root[data-theme="aurora"] .hero-banner {
+  background-image: linear-gradient(135deg, #0f766e 0%, #4f46e5 50%, #9333ea 100%);
+}
+
+/* 미래지향적 테마: 사이버 네온 (Cyber Neon) */
+:root[data-theme="cyberpunk"] {
+  --color-slate-950: #050510;
+  --color-slate-900: #0c0c20;
+  --color-slate-800: #161635;
+  --color-slate-700: #2a2a5e;
+  --color-indigo-400: #22d3ee;
+  --color-indigo-500: #06b6d4;
+  --color-indigo-600: #d946ef;
+  --color-indigo-700: #a21caf;
+}
+:root[data-theme="cyberpunk"] body {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217, 70, 239, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+:root[data-theme="cyberpunk"] .hero-banner {
+  background-image: linear-gradient(135deg, #0e7490 0%, #701a75 55%, #db2777 100%);
+  box-shadow: 0 0 28px rgba(34, 211, 238, 0.25);
+  border: 1px solid rgba(34, 211, 238, 0.45);
+}
+
+/* 로봇 테마: 메카 로봇 (Mecha Bot) */
+:root[data-theme="mecha-bot"] {
+  --color-slate-950: #0d1117;
+  --color-slate-900: #161c24;
+  --color-slate-800: #212a36;
+  --color-slate-700: #334155;
+  --color-indigo-400: #fbbf24;
+  --color-indigo-500: #f59e0b;
+  --color-indigo-600: #d97706;
+  --color-indigo-700: #b45309;
+}
+:root[data-theme="mecha-bot"] body {
+  background-image:
+    linear-gradient(rgba(251, 191, 36, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(251, 191, 36, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+:root[data-theme="mecha-bot"] .hero-banner {
+  background-image:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(251, 191, 36, 0.08) 0px,
+      rgba(251, 191, 36, 0.08) 10px,
+      transparent 10px,
+      transparent 20px
+    ),
+    linear-gradient(135deg, #1e293b 0%, #334155 55%, #b45309 100%);
+  border: 1px solid rgba(251, 191, 36, 0.45);
 }
 
 /* Custom sleek scrollbars */
