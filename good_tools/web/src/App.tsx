@@ -15,6 +15,7 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
   'lan-wol': lazy(() => import('./tools/LanWolTool')),
 
   // General Tools
+  'currency-calc': lazy(() => import('./tools/CurrencyCalcTool')),
   'pdf-tools': lazy(() => import('./tools/PdfTools')),
   'image-studio': lazy(() => import('./tools/ImageStudioTool')),
   'unit-date-calc': lazy(() => import('./tools/UnitDateCalcTool')),
@@ -60,6 +61,11 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
 
   // Feed Tools
   'rss-reader': lazy(() => import('./tools/RssReaderTool')),
+
+  // Mini Games
+  'game-ladder': lazy(() => import('./tools/GameLadderTool')),
+  'game-roulette': lazy(() => import('./tools/GameRouletteTool')),
+  'game-reaction': lazy(() => import('./tools/GameReactionTool')),
 };
 
 function ToolRoute({

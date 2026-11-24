@@ -99,7 +99,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        {(['all', 'ha', 'general', 'developer', 'feed'] as const).map((cat) => {
+        {(['all', 'ha', 'general', 'developer', 'feed', 'games'] as const).map((cat) => {
           const count = cat === 'all' ? visibleBase.length : visibleBase.filter((t) => t.category === cat).length;
           const label =
             cat === 'all'
@@ -150,6 +150,8 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                           ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
                           : tool.category === 'developer'
                           ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          : tool.category === 'games'
+                          ? 'bg-pink-50 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400'
                           : 'bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400'
                       }`}
                     >

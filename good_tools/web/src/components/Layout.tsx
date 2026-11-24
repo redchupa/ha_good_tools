@@ -80,7 +80,7 @@ export function Layout({
 
   const currentThemeOpt = THEME_OPTIONS.find((t) => t.id === theme) || THEME_OPTIONS[0];
 
-  const categories: ToolCategory[] = ['ha', 'general', 'developer', 'feed'];
+  const categories: ToolCategory[] = ['ha', 'general', 'developer', 'feed', 'games'];
   const tName = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.nameEn ? t.nameEn : t.name);
   const tDesc = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.shortDescEn ? t.shortDescEn : t.shortDesc);
 

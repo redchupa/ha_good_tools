@@ -1,4 +1,4 @@
-export type ToolCategory = 'ha' | 'general' | 'developer' | 'feed';
+export type ToolCategory = 'ha' | 'general' | 'developer' | 'feed' | 'games';
 
 export interface ToolMeta {
   id: string;
@@ -17,6 +17,7 @@ export const CATEGORY_LABELS: Record<ToolCategory, { label: string; labelEn: str
   general: { label: '일반 도구', labelEn: 'General Tools', desc: '일상·텍스트·PDF·이미지·미디어 유틸리티' },
   developer: { label: '개발자 도구', labelEn: 'Developer Tools', desc: '코드·인코딩·암호화·색상·네트워크 개발 유틸리티' },
   feed: { label: '웹 / 피드', labelEn: 'Web & Feeds', desc: 'RSS/Atom 피드 및 웹 게시글 리더' },
+  games: { label: '미니게임', labelEn: 'Mini Games', desc: '사다리타기·점심 룰렛·반응속도·로또 추첨' },
 };
 
 export const TOOLS: ToolMeta[] = [
@@ -75,6 +76,16 @@ export const TOOLS: ToolMeta[] = [
   },
 
   // 일반 도구
+  {
+    id: 'currency-calc',
+    name: '나라별 환율 계산기',
+    nameEn: 'Currency Converter',
+    shortDesc: '2026년 연평균 환율 기본값 제공, 실제 환율 직접 수정 & 15개국 동시 환산',
+    shortDescEn: 'Convert 15 currencies with 2026 average defaults & custom rates',
+    category: 'general',
+    icon: 'Coins',
+    keywords: ['환율', '달러', '엔화', '유로', '위안', 'currency', 'exchange', '여행'],
+  },
   {
     id: 'pdf-tools',
     name: 'PDF 병합 / 분할 / 변환',
@@ -249,9 +260,9 @@ export const TOOLS: ToolMeta[] = [
     name: '로또 번호 생성기',
     nameEn: 'Lotto 6/45 Generator',
     shortDesc: '고정수/제외수 설정, 다중 게임 생성, 홀짝·합계 통계 분석',
-    category: 'general',
+    category: 'games',
     icon: 'Dices',
-    keywords: ['로또', 'lotto', '번호', '추첨', '6/45'],
+    keywords: ['로또', 'lotto', '번호', '추첨', '6/45', '게임'],
   },
   {
     id: 'flashlight',
@@ -459,6 +470,38 @@ export const TOOLS: ToolMeta[] = [
     icon: 'Rss',
     keywords: ['rss', 'atom', '피드', '뉴스', '구독'],
     badge: 'network',
+  },
+
+  // 미니게임
+  {
+    id: 'game-ladder',
+    name: '사다리타기',
+    nameEn: 'Ladder Game',
+    shortDesc: '오늘 커피는 누가 쏠까? 2~8명 참가자 이름·당첨 인원 설정 사다리 게임',
+    shortDescEn: 'Classic 2-8 player ladder game with custom names and winners',
+    category: 'games',
+    icon: 'GitFork',
+    keywords: ['사다리', '사다리타기', '커피', '내기', '게임', 'ladder'],
+  },
+  {
+    id: 'game-roulette',
+    name: '점심 메뉴 룰렛',
+    nameEn: 'Lunch Roulette',
+    shortDesc: '오늘 뭐 먹지? 항목을 자유롭게 편집해 돌리는 원판 룰렛',
+    shortDescEn: 'Spin-the-wheel roulette with customizable items and presets',
+    category: 'games',
+    icon: 'Disc3',
+    keywords: ['룰렛', '돌림판', '점심', '메뉴', '게임', 'roulette'],
+  },
+  {
+    id: 'game-reaction',
+    name: '반응속도 테스트',
+    nameEn: 'Reaction Speed Test',
+    shortDesc: '초록색으로 바뀌는 순간 터치! ms 반응속도와 오늘 최고 기록 도전',
+    shortDescEn: 'Tap as soon as green appears — track ms speed & daily best',
+    category: 'games',
+    icon: 'Zap',
+    keywords: ['반응속도', '순발력', '테스트', '게임', 'reaction'],
   },
 ];
 
