@@ -1,0 +1,17 @@
+name: Dependency review
+on:
+  pull_request:
+    paths: ['good_tools/**/package*.json']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm audit --package-lock-only --audit-level=high
+        working-directory: good_tools/web
+      - run: npm audit --package-lock-only --omit=dev --audit-level=high
+        working-directory: good_tools/server
