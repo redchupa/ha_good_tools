@@ -1,0 +1,28 @@
+name: "Good Tools"
+version: "1.0.0"
+slug: "good_tools"
+description: "현대화된 올인원 온라인 유틸리티 & 개발자 도구 모음 (32종, wepplication/tools 기반 업그레이드)"
+url: "https://github.com/redchupa/ha_good_tools"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+init: false
+startup: services
+boot: auto
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:toolbox-outline
+panel_title: "Good Tools"
+ports:
+  8099/tcp: null
+ports_description:
+  8099/tcp: "직접 접속용 웹 UI 포트 (선택 사항, 기본은 Ingress 사용)"
+options:
+  log_level: "info"
+  allow_network_tools: true
+  default_theme: "system"
+schema:
+  log_level: list(debug|info|warning|error)
+  allow_network_tools: bool
+  default_theme: list(system|light|dark)

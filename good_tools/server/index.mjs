@@ -1,0 +1,58 @@
+import express from 'express';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createApiRouter } from './routes/api.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function createApp(options = {}) {
+  const publicDir = options.publicDir || process.env.PUBLIC_DIR || path.resolve(__dirname, '../web/dist');
+  const dataDir = options.dataDir || process.env.DATA_DIR || path.resolve(__dirname, '../../.local_data');
+  const allowNetworkTools =
+    options.allowNetworkTools ?? (process.env.ALLOW_NETWORK_TOOLS !== 'false');
+  const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.0.0';
+
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '2mb' }));
+
+  // Basic security headers (Ingress iframe-compatible)
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+
+  app.use('/api', createApiRouter({ dataDir, allowNetworkTools, defaultTheme, appVersion }));
+
+  // Serve static SPA assets
+  if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir, { index: 'index.html', maxAge: '1h' }));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/')) return next();
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  } else {
+    app.get('/', (_req, res) => {
+      res.json({
+        message: 'Good Tools API server is running. Frontend build not found at PUBLIC_DIR.',
+        publicDir,
+      });
+    });
+  }
+
+  return app;
+}
+
+// Start server only when executed directly
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  const port = Number(process.env.PORT || 8099);
+  const host = process.env.HOST || '0.0.0.0';
+  const app = createApp();
+  app.listen(port, host, () => {
+    console.log(`[Good Tools] Listening on http://${host}:${port}`);
+  });
+}
