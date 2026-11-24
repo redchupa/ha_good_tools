@@ -73,6 +73,7 @@ export function Layout({
           t.name.toLowerCase().includes(q) ||
           (t.nameEn || '').toLowerCase().includes(q) ||
           t.shortDesc.toLowerCase().includes(q) ||
+          t.shortDescEn?.toLowerCase().includes(q) ||
           t.keywords.some((k) => k.toLowerCase().includes(q))
         );
       })

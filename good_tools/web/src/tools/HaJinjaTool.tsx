@@ -14,7 +14,7 @@ export default function HaJinjaTool() {
     {
       category: ui('상태 조회', "State lookup"),
       title: ui('특정 영역(Area) 내 켜진 조명 이름 목록', "List lights on in an area"),
-      code: `{{ area_entities('거실') | select('match', '^light\\.') | select('is_state', 'on') | map('state_attr', 'friendly_name') | join(', ') }}`,
+      code: ui(`{{ area_entities('거실') | select('match', '^light\\.') | select('is_state', 'on') | map('state_attr', 'friendly_name') | join(', ') }}`, `{{ area_entities('Living room') | select('match', '^light\\.') | select('is_state', 'on') | map('state_attr', 'friendly_name') | join(', ') }}`),
     },
     {
       category: ui('배터리·점검', "Battery and diagnostics"),
@@ -28,23 +28,23 @@ export default function HaJinjaTool() {
     },
     {
       category: ui('시간·날짜', "Date and time"),
-      title: ui('한국어 요일 포함 현재 시각', "Current time with Korean weekday"),
-      code: `{% set days = ['월','화','수','목','금','토','일'] %}{{ now().strftime('%Y-%m-%d') }} ({{ days[now().weekday()] }}) {{ now().strftime('%H:%M') }}`,
+      title: ui('한국어 요일 포함 현재 시각', "Current time with weekday"),
+      code: ui(`{% set days = ['월','화','수','목','금','토','일'] %}{{ now().strftime('%Y-%m-%d') }} ({{ days[now().weekday()] }}) {{ now().strftime('%H:%M') }}`, `{% set days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}{{ now().strftime('%Y-%m-%d') }} ({{ days[now().weekday()] }}) {{ now().strftime('%H:%M') }}`),
     },
     {
       category: ui('시간·날짜', "Date and time"),
       title: ui('특정 엔티티 마지막 변경 후 경과 시간(분)', "Minutes since an entity last changed"),
-      code: `{{ ((now() - states.binary_sensor.front_door.last_changed).total_seconds() / 60) | round(1) }}분 전`,
+      code: ui(`{{ ((now() - states.binary_sensor.front_door.last_changed).total_seconds() / 60) | round(1) }}분 전`, `{{ ((now() - states.binary_sensor.front_door.last_changed).total_seconds() / 60) | round(1) }} minutes ago`),
     },
     {
       category: ui('숫자·포맷', "Numbers and formatting"),
       title: ui('천 단위 콤마 포맷 (전력요금/금액)', "Format a cost with thousands separators"),
-      code: `{{ '{:,.0f}'.format(states('sensor.monthly_cost') | float(0)) }}원`,
+      code: ui(`{{ '{:,.0f}'.format(states('sensor.monthly_cost') | float(0)) }}원`, `{{ '{:,.0f}'.format(states('sensor.monthly_cost') | float(0)) }} KRW`),
     },
     {
       category: ui('알림 메시지', "Notifications"),
       title: ui('열려 있는 문/창문 요약 알림', "Summarize open doors and windows"),
-      code: `{% set open = states.binary_sensor | selectattr('attributes.device_class', 'in', ['door', 'window']) | selectattr('state', 'eq', 'on') | map(attribute='name') | list %}\n{% if open %}열려 있음: {{ open | join(', ') }}{% else %}모든 문과 창문이 닫혀 있습니다.{% endif %}`,
+      code: ui(`{% set open = states.binary_sensor | selectattr('attributes.device_class', 'in', ['door', 'window']) | selectattr('state', 'eq', 'on') | map(attribute='name') | list %}\n{% if open %}열려 있음: {{ open | join(', ') }}{% else %}모든 문과 창문이 닫혀 있습니다.{% endif %}`, `{% set open = states.binary_sensor | selectattr('attributes.device_class', 'in', ['door', 'window']) | selectattr('state', 'eq', 'on') | map(attribute='name') | list %}\n{% if open %}Open: {{ open | join(', ') }}{% else %}All doors and windows are closed.{% endif %}`),
     },
   ];
   const [search, setSearch] = useState('');

@@ -8,7 +8,6 @@ import { canvasToBlob, drawImage } from '../utils/imageConvert';
 
 export default function PdfTools() {
   const ui = useText();
-  const t = ui;
   const [tab, setTab] = useState<'merge' | 'split' | 'img2pdf'>('merge');
   const [files, setFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
@@ -61,7 +60,7 @@ export default function PdfTools() {
       process('img2pdf', ready, 'images.pdf');
     } catch (e) {
       setBusy(false);
-      setMsg(e instanceof Error ? e.message : t('이미지를 읽지 못했습니다.', 'Could not read an image.'));
+      setMsg(e instanceof Error ? e.message : ui('이미지를 읽지 못했습니다.', 'Could not read an image.'));
     }
   };
   const onSelectSplit = (file:File) => {
@@ -75,9 +74,9 @@ export default function PdfTools() {
       <div className="flex flex-wrap gap-2">
         {(
           [
-            ['merge', t('PDF 병합','Merge PDFs')],
-            ['split', t('PDF 페이지 추출','Extract pages')],
-            ['img2pdf', t('이미지 → PDF','Images to PDF')],
+            ['merge', ui('PDF 병합','Merge PDFs')],
+            ['split', ui('PDF 페이지 추출','Extract pages')],
+            ['img2pdf', ui('이미지 → PDF','Images to PDF')],
           ] as const
         ).map(([t, label]) => (
           <button
@@ -100,7 +99,7 @@ export default function PdfTools() {
         <div className="space-y-4">
           <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
             <Upload className="w-6 h-6 text-indigo-500" />
-            <span className="text-sm font-medium">{t('병합할 PDF 파일 여러 개를 선택하세요 (100% 로컬 처리)','Choose PDFs to merge on this device.')}</span>
+            <span className="text-sm font-medium">{ui('병합할 PDF 파일 여러 개를 선택하세요 (100% 로컬 처리)','Choose PDFs to merge on this device.')}</span>
             <input
               type="file"
               accept="application/pdf"
@@ -125,7 +124,7 @@ export default function PdfTools() {
                 disabled={files.length < 2 || busy}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40 cursor-pointer"
               >
-                <Download className="w-4 h-4" /> {busy ? t('병합 중...','Merging…') : t('병합 후 다운로드','Merge files')}
+                <Download className="w-4 h-4" /> {busy ? ui('병합 중...','Merging…') : ui('병합 후 다운로드','Merge files')}
               </button>
             </div>
           )}
@@ -170,7 +169,7 @@ export default function PdfTools() {
         <div className="space-y-4">
           <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
             <Upload className="w-6 h-6 text-indigo-500" />
-            <span className="text-sm font-medium">{t('PDF로 합칠 이미지를 선택하세요 (PNG·JPG·WebP 등)','Choose images (PNG, JPG, WebP…).')}</span>
+            <span className="text-sm font-medium">{ui('PDF로 합칠 이미지를 선택하세요 (PNG·JPG·WebP 등)','Choose images (PNG, JPG, WebP…).')}</span>
             <input
               type="file"
               accept="image/*"
@@ -193,7 +192,7 @@ export default function PdfTools() {
       )}
 
       {tab === 'split' && splitFile && pageCount > 0 && <details>
-        <summary className="cursor-pointer text-xs">{t('선택 페이지 미리보기', 'Page preview')}</summary>
+        <summary className="cursor-pointer text-xs">{ui('선택 페이지 미리보기', 'Page preview')}</summary>
         <PdfPagePreview file={splitFile} page={parseInt(pageRange) || 1} />
       </details>}
       {busy && <div><progress value={progress} max={100} /> <button onClick={cancel}>{ui("취소 / Cancel", "Cancel")}</button></div>}

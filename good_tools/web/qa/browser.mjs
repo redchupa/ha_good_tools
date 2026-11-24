@@ -109,7 +109,7 @@ try {
   await page.keyboard.press('Control+k');
   await page.locator('input[placeholder*=키워드]').waitFor();
   await page.keyboard.press('Escape');
-  await page.unroute('**/api/prefs');
+  await page.unrouteAll({ behavior: 'wait' });
   await open('csv-json');
   const csv = page.locator('textarea').first();
   await csv.fill('이름,room\n거실,kitchen');
@@ -121,6 +121,15 @@ try {
   await page.reload();
   await page.getByTitle('Switch language (English / Korean)').waitFor();
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  const ids = [...readFileSync('src/App.tsx', 'utf8').matchAll(/'([a-z0-9-]+)': lazy\(/g)].map(match => match[1]);
+  assert.ok(ids.length >= 51);
+  for (const id of ids) {
+    await open(id);
+    await page.locator('main h1').last().waitFor();
+    await page.getByText('Loading tool...', {exact:true}).waitFor({state:'hidden'});
+    assert.equal(await page.getByText('This tool encountered an unexpected error.').count(), 0, id);
+  }
+  console.log('PASS: opened ' + ids.length + ' tools in English');
   await open('unit-date-calc');
   await page.getByText('Everyday unit conversions').waitFor();
   await page.getByTitle('Switch language (English / Korean)').click();

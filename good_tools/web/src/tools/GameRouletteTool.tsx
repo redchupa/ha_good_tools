@@ -11,7 +11,6 @@ export default function GameRouletteTool() {
     [ui('야식 메뉴', "Late-night snacks")]: [ui('치킨', "Chicken"), ui('피자', "Pizza"), ui('족발/보쌈', "Braised pork"), ui('떡볶이', "Spicy rice cakes"), ui('라면', "Ramen"), ui('곱창', "Grilled offal")],
     [ui('카페 음료', "Coffee shop")]: [ui('아메리카노', "Americano"), ui('카페라떼', "Caffè latte"), ui('바닐라라떼', "Vanilla latte"), ui('말차라떼', "Matcha latte"), ui('에이드', "Fruit soda"), ui('스무디', "Smoothie")],
   };
-  const t = ui;
   const [items, setItems] = useState<string[]>(() => {
     try {
       const list = JSON.parse(localStorage.getItem('good_tools_roulette') || 'null');
@@ -119,13 +118,13 @@ export default function GameRouletteTool() {
 
         <div className="text-center min-h-[44px]">
           {spinning ? (
-            <div className="text-sm font-semibold text-indigo-500 animate-pulse">{t('두근두근 돌아가는 중...','Spinning…')}</div>
+            <div className="text-sm font-semibold text-indigo-500 animate-pulse">{ui('두근두근 돌아가는 중...','Spinning…')}</div>
           ) : winner ? (
             <div className="px-5 py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-300 dark:border-indigo-500/40 text-lg font-extrabold text-indigo-700 dark:text-indigo-300">
               {ui("당첨:", "Winner:")} {winner}
             </div>
           ) : (
-            <div className="text-xs text-slate-400">{t('돌리기 버튼을 눌러 오늘의 선택을 뽑아보세요','Spin to pick an item.')}</div>
+            <div className="text-xs text-slate-400">{ui('돌리기 버튼을 눌러 오늘의 선택을 뽑아보세요','Spin to pick an item.')}</div>
           )}
         </div>
 
@@ -136,7 +135,7 @@ export default function GameRouletteTool() {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm disabled:opacity-40 cursor-pointer"
         >
           <RotateCw className={`w-4 h-4 ${spinning ? 'animate-spin' : ''}`} />
-          {spinning ? t('돌리는 중...','Spinning…') : winner ? t('다시 돌리기','Spin again') : t('돌림판 돌리기','Spin')}
+          {spinning ? ui('돌리는 중...','Spinning…') : winner ? ui('다시 돌리기','Spin again') : ui('돌림판 돌리기','Spin')}
         </button>
       </div>
 

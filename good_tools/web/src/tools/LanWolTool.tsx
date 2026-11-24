@@ -109,7 +109,7 @@ export default function LanWolTool() {
             {portRes.open ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
             <span>
               {portRes.open === undefined
-                ? portRes.error
+                ? <Diagnostic text={portRes.error} />
                 : portRes.open
                 ? ui(`${portRes.host}:${portRes.port} 열림 (응답 ${portRes.latencyMs}ms)`, `${portRes.host}:${portRes.port} is open (${portRes.latencyMs} ms)`)
                 : ui(`${portRes.host}:${portRes.port} 닫힘 또는 응답 없음 (${portRes.error || 'timeout'}, ${portRes.latencyMs}ms)`, `${portRes.host}:${portRes.port} is closed or unresponsive (${portRes.error ?? "timeout"}, ${portRes.latencyMs} ms)`)}

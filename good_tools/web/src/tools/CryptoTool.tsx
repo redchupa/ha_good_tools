@@ -7,7 +7,6 @@ import { CopyButton } from '../components/CopyButton';
 
 export default function CryptoTool() {
   const ui = useText();
-  const t = ui;
   const [tab, setTab] = useState<'aes' | 'hmac' | 'password'>('aes');
   const [text, setText] = useState('Home Assistant Secret Payload');
   const [secret, setSecret] = useState('');
@@ -40,9 +39,9 @@ export default function CryptoTool() {
       <div className="flex gap-2">
         {(
           [
-            ['aes', t('AES-256 암복호화','AES-256 encryption')],
-            ['hmac', t('HMAC / SHA 해시','HMAC / SHA hashes')],
-            ['password', t('보안 비밀번호 생성기','Password generator')],
+            ['aes', ui('AES-256 암복호화','AES-256 encryption')],
+            ['hmac', ui('HMAC / SHA 해시','HMAC / SHA hashes')],
+            ['password', ui('보안 비밀번호 생성기','Password generator')],
           ] as const
         ).map(([t, label]) => (
           <button
@@ -86,7 +85,7 @@ export default function CryptoTool() {
             </button>
             <CopyButton text={output} className="ml-auto" />
           </div>
-          {busy && <p role="status" className="text-xs text-slate-500">{t('키를 만드는 중입니다. 기기에 따라 몇 초 걸릴 수 있습니다.','Deriving the key. This can take a few seconds on slower devices.')}</p>}
+          {busy && <p role="status" className="text-xs text-slate-500">{ui('키를 만드는 중입니다. 기기에 따라 몇 초 걸릴 수 있습니다.','Deriving the key. This can take a few seconds on slower devices.')}</p>}
           {error && <div className="text-xs text-rose-500"><Diagnostic text={error} /></div>}
           <textarea
             readOnly

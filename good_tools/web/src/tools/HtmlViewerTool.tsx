@@ -14,7 +14,7 @@ export default function HtmlViewerTool() {
   const [remote, setRemote] = useState<any>(null);
 
   const [liveHtml, setLiveHtml] = useState(
-    `<div style="font-family:sans-serif;padding:24px;">\n  <h2 style="color:#4f46e5;">Good Tools HTML 미리보기</h2>\n  <p>여기에 HTML/CSS 코드를 입력하면 우측에서 즉시 렌더링됩니다.</p>\n</div>`
+    ui(`<div style="font-family:sans-serif;padding:24px;">\n  <h2 style="color:#4f46e5;">Good Tools HTML 미리보기</h2>\n  <p>여기에 HTML/CSS 코드를 입력하면 우측에서 즉시 렌더링됩니다.</p>\n</div>`, `<div style="font-family:sans-serif;padding:24px;">\n  <h2 style="color:#4f46e5;">Good Tools HTML preview</h2>\n  <p>Edit HTML or CSS to see a live preview.</p>\n</div>`)
   );
 
   const fetchRemote = async (e: React.FormEvent) => {

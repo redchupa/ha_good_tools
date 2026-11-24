@@ -30,6 +30,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
       t.name.toLowerCase().includes(q) ||
       (t.nameEn || '').toLowerCase().includes(q) ||
       t.shortDesc.toLowerCase().includes(q) ||
+          t.shortDescEn?.toLowerCase().includes(q) ||
       t.keywords.some((k) => k.toLowerCase().includes(q))
     );
   });
@@ -207,7 +208,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                     className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                       isFav ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
                     }`}
-                    title={isFav ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                    title={lang === 'en' ? (isFav ? 'Remove favorite' : 'Add favorite') : (isFav ? '즐겨찾기 해제' : '즐겨찾기 추가')}
                   >
                     <Star className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
                   </button>

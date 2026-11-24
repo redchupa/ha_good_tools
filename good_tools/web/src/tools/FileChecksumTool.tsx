@@ -13,7 +13,6 @@ interface HashSet {
 
 export default function FileChecksumTool() {
   const ui = useText();
-  const t = ui;
   const [sourceLabel, setSourceLabel] = useState('');
   const [textInput, setTextInput] = useState('');
   const [hashes, setHashes] = useState<HashSet | null>(null);
@@ -61,8 +60,8 @@ export default function FileChecksumTool() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40">
           <Upload className="w-6 h-6 text-indigo-500" />
-          <span className="text-sm font-medium">{t('파일 선택 (로컬 계산)','Choose a file')}</span>
-          <span className="text-xs text-slate-400">{t('업로드 없이 브라우저에서 즉시 해시 계산','Files are processed on this device.')}</span>
+          <span className="text-sm font-medium">{ui('파일 선택 (로컬 계산)','Choose a file')}</span>
+          <span className="text-xs text-slate-400">{ui('업로드 없이 브라우저에서 즉시 해시 계산','Files are processed on this device.')}</span>
           <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
         </label>
 
@@ -96,7 +95,7 @@ export default function FileChecksumTool() {
         )}
       </div>
 
-      {progress !== null && <div><progress max={100} value={progress} /> {progress}% <button onClick={() => { stop(); setSourceLabel(t('취소됨','Cancelled')); }}>{t('취소','Cancel')}</button></div>}
+      {progress !== null && <div><progress max={100} value={progress} /> {progress}% <button onClick={() => { stop(); setSourceLabel(t('취소됨','Cancelled')); }}>{ui('취소','Cancel')}</button></div>}
       {!hashes && sourceLabel && <p role="status">{sourceLabel}</p>}
       {hashes && (
         <div className="space-y-2">

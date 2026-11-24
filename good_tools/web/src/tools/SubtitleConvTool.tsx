@@ -8,7 +8,7 @@ import { parseSmi, parseSrtOrVtt, shiftCues, cuesToSrt, cuesToVtt, cuesToSmi } f
 export default function SubtitleConvTool() {
   const ui = useText();
   const [input, setInput] = useState(
-    `<SYNC Start=1000><P Class=KRCC>안녕하세요!<br>자막 변환기입니다.\n<SYNC Start=3500><P Class=KRCC>&nbsp;\n<SYNC Start=4000><P Class=KRCC>SMI, SRT, VTT를 자유롭게 변환합니다.\n<SYNC Start=7000><P Class=KRCC>&nbsp;`
+    ui(`<SYNC Start=1000><P Class=KRCC>안녕하세요!<br>자막 변환기입니다.\n<SYNC Start=3500><P Class=KRCC>&nbsp;\n<SYNC Start=4000><P Class=KRCC>SMI, SRT, VTT를 자유롭게 변환합니다.\n<SYNC Start=7000><P Class=KRCC>&nbsp;`, `<SYNC Start=1000><P Class=KRCC>Hello!<br>Welcome to the subtitle converter.\n<SYNC Start=3500><P Class=KRCC>&nbsp;\n<SYNC Start=4000><P Class=KRCC>Convert between SMI, SRT and VTT.\n<SYNC Start=7000><P Class=KRCC>&nbsp;`)
   );
   const [targetFormat, setTargetFormat] = useState<'srt' | 'vtt' | 'smi'>('srt');
   const [shiftMs, setShiftMs] = useState(0);
