@@ -3,6 +3,14 @@
 The configured SSH account needs a POSIX shell, Node 22.12+ or Node 24, npm,
 Chromium and space for two npm installs. The operator runs this script from
 the repository root with an SSH key in the local agent or SSH config.
+
+Release steps (the add-on store reads config.yaml from main, so the image must exist first):
+1. Bump the version in config.yaml, run.sh, server/index.mjs and server/routes/api.mjs on a branch.
+2. python scripts/verify-release.py <commit> --user <account> --output web-dist.tar.gz
+3. Mark the commit: status context "sub-ha/verified", state success, description = printed SHA-256.
+4. Upload web-dist.tar.gz to a "v<version>-rc.1" pre-release.
+5. Run the "Package verified sub-HA build" workflow on main with the commit and version.
+6. Merge the branch after "Release guard" passes, update the sub HA, then tag v<version>.
 """
 import argparse
 import hashlib
