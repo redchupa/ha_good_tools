@@ -45,3 +45,9 @@
 4. 암호화. 신규 데이터에 PBKDF2·AES-GCM을 사용하고 구버전 복호화와 표준 해시 벡터를 검증한다.
 5. 반복 사용. 최근 목록과 세션 정보 없는 링크, 도구 내부 영문 안내, 기준일·출처·오프라인 환율, 룰렛 저장과 동작 감소를 적용한다.
 6. 릴리스. 서브 HA 기존 설치에서 업데이트와 복구를 확인하고 버전·CHANGELOG·PROGRESS·태그와 GitHub Release를 동기화한다.
+
+### 릴리스 운영
+
+서브 HA SSH 환경에 Chromium·npm·Node 24가 준비돼 있으면 운영 PC에서 `python scripts/verify-release.py <commit> --user <SSH계정> --output web-dist.tar.gz`로 검증한다. 스크립트는 지정 커밋을 192.168.1.129의 임시 디렉터리에 풀고 테스트 후 정리한다. 외부 PR 코드를 실행할 권한을 주는 공개 self-hosted runner는 등록하지 않는다.
+
+운영자는 통과한 커밋에 `sub-ha/verified` 성공 상태를 등록하고 description에 출력된 SHA-256을 넣는다. `v<version>-rc.1` 사전 릴리스에 해당 아카이브를 올린 뒤 main에서 Package verified sub-HA build를 실행한다. 워크플로는 확인된 자산만 패키징한다. 세 플랫폼 manifest의 익명 pull, 서브 HA의 Ingress 및 이전 버전 복원을 확인한 뒤 정식 버전을 게시한다.
