@@ -1,26 +1,47 @@
 import { useEffect, useState } from 'react';
 import { CopyButton } from './CopyButton';
+import { useText } from '../hooks/language';
 
-export function useHaCapabilities() {
-  const [caps, setCaps] = useState<{ templates: boolean; notify: boolean } | null>(null);
+type Caps = { templates: boolean; notify: boolean };
+// caps is null until HA access is confirmed; userId is set when the signed-in person is not allowed.
+export function useHaAccess() {
+  const [access, setAccess] = useState<{ caps: Caps | null; userId: string }>({ caps: null, userId: '' });
   useEffect(() => {
     const ctl = new AbortController();
     fetch('./api/ha/capabilities', { signal: ctl.signal }).then(async r => {
-      if (r.ok) setCaps(await r.json());
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) setAccess({ caps: data, userId: '' });
+      else if (typeof data.userId === 'string') setAccess({ caps: null, userId: data.userId });
     }).catch(() => {});
     return () => ctl.abort();
   }, []);
-  return caps;
+  return access;
+}
+export function useHaCapabilities() {
+  return useHaAccess().caps;
+}
+
+function HaOnboarding({ userId }: { userId: string }) {
+  const t = useText();
+  return <details className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-xs">
+    <summary className="cursor-pointer font-medium">{t('내 HA 엔티티를 검색하려면', 'Search your own HA entities')}</summary>
+    <div className="mt-2 space-y-2 text-slate-600 dark:text-slate-300">
+      <p>{t('관리자가 Good Tools 앱 설정의 ha_user_ids에 아래 사용자 ID를 추가하고 앱을 다시 시작하면 이 화면에서 엔티티 검색을 쓸 수 있습니다.',
+        'Ask an administrator to add this user ID to ha_user_ids in the Good Tools app options and restart the app.')}</p>
+      <div className="flex items-center gap-2"><code className="font-mono break-all">{userId}</code><CopyButton text={userId} /></div>
+      <p className="text-slate-400">{t('설정 → 앱 → Good Tools → 구성', 'Settings → Apps → Good Tools → Configuration')}</p>
+    </div>
+  </details>;
 }
 export function HaIntegration({ evaluate = false }: { evaluate?: boolean }) {
-  const caps = useHaCapabilities();
+  const { caps, userId } = useHaAccess();
   const [q,setQ] = useState('');
   const [ids,setIds] = useState<string[]>([]);
   const [template,setTemplate] = useState('');
   const [output,setOutput] = useState('');
   const [error,setError] = useState('');
   const [busy,setBusy] = useState(false);
-  if (!caps) return null;
+  if (!caps) return userId ? <HaOnboarding userId={userId} /> : null;
   const run = async (search: boolean) => {
     setBusy(true); setError('');
     try {

@@ -19,6 +19,7 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
   // General Tools
   'currency-calc': lazy(() => import('./tools/CurrencyCalcTool')),
   'pdf-tools': lazy(() => import('./tools/PdfTools')),
+  'file-convert': lazy(() => import('./tools/FileConverterTool')),
   'image-studio': lazy(() => import('./tools/ImageStudioTool')),
   'unit-date-calc': lazy(() => import('./tools/UnitDateCalcTool')),
   'regex-tester': lazy(() => import('./tools/RegexTesterTool')),
@@ -111,7 +112,7 @@ function ToolRoute({
 
 export default function App() {
   const { theme, setTheme } = useTheme();
-  const { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang } = useSyncedPrefs();
+  const { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang, syncError, dismissSyncError } = useSyncedPrefs();
 
   return (
     <Language.Provider value={lang}><Layout
@@ -151,6 +152,13 @@ export default function App() {
           }
         />
       </Routes>
-    </Layout></Language.Provider>
+    </Layout>
+    {syncError && (
+      <div role="alert" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-50 flex items-start gap-3 p-3 rounded-xl bg-rose-600 text-white text-xs shadow-lg">
+        <span className="flex-1">{syncError}</span>
+        <button type="button" onClick={dismissSyncError} className="font-semibold cursor-pointer">{lang === 'en' ? 'Close' : '닫기'}</button>
+      </div>
+    )}
+    </Language.Provider>
   );
 }

@@ -1,5 +1,5 @@
 import { useText } from '../hooks/language';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { encrypt, decrypt, textHashes } from '../utils/secureCrypto';
 import { RefreshCw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -16,18 +16,8 @@ export default function CryptoTool() {
   const [pwSymbols, setPwSymbols] = useState(true);
   const [password, setPassword] = useState('');
 
-  const [rows, setRows] = useState<string[][]>([]);
+  const rows = useMemo(() => (tab === 'hmac' ? textHashes(text, secret) : []), [tab, text, secret]);
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    let active = true;
-    if (tab === 'hmac') {
-      setRows([]);
-      setError('');
-      textHashes(text, secret).then(v => { if (active) setRows(v); })
-        .catch(e => { if (active) setError(String(e.message)); });
-    }
-    return () => { active = false; };
-  }, [tab, text, secret]);
   const transform = async (mode: 'encrypt' | 'decrypt') => {
     setError(''); setOutput(''); setBusy(true);
     try { setOutput(await (mode === 'encrypt' ? encrypt(text,secret) : decrypt(text.trim(),secret))); }
@@ -94,6 +84,7 @@ export default function CryptoTool() {
             </button>
             <CopyButton text={output} className="ml-auto" />
           </div>
+          {busy && <p role="status" className="text-xs text-slate-500">{t('키를 만드는 중입니다. 기기에 따라 몇 초 걸릴 수 있습니다.','Deriving the key. This can take a few seconds on slower devices.')}</p>}
           {error && <div className="text-xs text-rose-500">{error}</div>}
           <textarea
             readOnly
@@ -120,7 +111,6 @@ export default function CryptoTool() {
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
           <div className="space-y-2">
-            {error && <p role="alert">{error}</p>}
             {rows.map(([name, val]) => (
               <div key={name} className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
                 <div className="min-w-0">

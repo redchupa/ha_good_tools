@@ -1,4 +1,5 @@
 import { recentTools } from '../utils/toolNavigation';
+import { toolAvailability, useEnvironment } from '../utils/capabilities';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Star, Wifi, ShieldAlert, Radio } from 'lucide-react';
@@ -16,6 +17,7 @@ interface HomePageProps {
 export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomePageProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<'all' | ToolCategory>('all');
+  const env = useEnvironment();
 
   const visibleBase = TOOLS.filter((t) => !hiddenTools.includes(t.id));
 
@@ -184,6 +186,18 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                             <ShieldAlert className="w-2.5 h-2.5" /> HTTPS
                           </span>
                         )}
+                        {(() => {
+                          const avail = toolAvailability(tool.id, env);
+                          if (avail.level === 'ok') return null;
+                          return (
+                            <span title={lang === 'en' ? avail.en : avail.ko}
+                              className={`text-[10px] px-1.5 rounded ${avail.level === 'blocked'
+                                ? 'bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300'}`}>
+                              {avail.level === 'blocked' ? (lang === 'en' ? 'Unavailable here' : '지금 사용 불가') : (lang === 'en' ? 'Limited' : '일부 제한')}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { isPrivateIp, assertSafePublicUrl, requestPublic } from '../utils/ssrf.mjs';
-import { buildMagicPacket } from '../utils/lan.mjs';
+import { buildMagicPacket, isLanAddress } from '../utils/lan.mjs';
 import { createApp } from '../index.mjs';
 
 describe('SSRF protection', () => {
@@ -164,15 +164,70 @@ describe('API routes', () => {
     assert.equal(prefs.theme, 'dark');
   });
 
-  it('preserves unreadable data and continues serving after a write failure', async () => {
+  it('moves unreadable data aside and keeps serving', async () => {
     const file = path.join(tempDir, 'clipboard.json');
     await fs.writeFile(file, 'corrupt');
+    assert.deepEqual(await (await fetch(baseUrl + '/api/clipboard')).json(), { items: [] });
     const response = await fetch(baseUrl + '/api/clipboard', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'note' }),
     });
-    assert.equal(response.status, 500);
-    assert.equal(await fs.readFile(file, 'utf8'), 'corrupt');
-    assert.equal((await fetch(baseUrl + '/api/health')).status, 200);
+    assert.equal(response.status, 201);
+    const kept = (await fs.readdir(tempDir)).filter(name => name.startsWith('clipboard.json.corrupt-'));
+    assert.equal(kept.length, 1);
+    assert.equal(await fs.readFile(path.join(tempDir, kept[0]), 'utf8'), 'corrupt');
+    assert.deepEqual((await (await fetch(baseUrl + '/api/health')).json()).recovered, ['clipboard']);
+    await fs.writeFile(path.join(tempDir, 'prefs.json'), '[1,2]');
+    assert.equal((await (await fetch(baseUrl + '/api/prefs')).json()).lang, 'ko');
+  });
+
+  it('keeps pinned notes first and outside the unpinned limit', async () => {
+    const send = (route, method, body) => fetch(baseUrl + route, {
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(r => r.json());
+    await fs.writeFile(path.join(tempDir, 'clipboard.json'), '[]');
+    const { item } = await send('/api/clipboard', 'POST', { content: 'door code' });
+    await send('/api/clipboard/' + item.id, 'PATCH', { pinned: true });
+    let items;
+    for (let i = 0; i < 60; i++) ({ items } = await send('/api/clipboard', 'POST', { content: 'link ' + i }));
+    assert.equal(items[0].id, item.id);
+    assert.equal(items.length, 51);
+    assert.equal(items.at(-1).content, 'link 10');
+  });
+
+  it('rejects stale edits and keeps both devices informed', async () => {
+    const send = (route, method, body) => fetch(baseUrl + route, {
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const { item } = await (await send('/api/clipboard', 'POST', { content: 'milk' })).json();
+    const first = await send('/api/clipboard/' + item.id, 'PATCH', { content: 'milk, eggs', rev: item.rev });
+    assert.equal(first.status, 200);
+    const stale = await send('/api/clipboard/' + item.id, 'PATCH', { content: 'milk, bread', rev: item.rev });
+    assert.equal(stale.status, 409);
+    assert.equal((await stale.json()).item.content, 'milk, eggs');
+    await send('/api/clipboard/' + item.id, 'DELETE');
+    assert.equal((await send('/api/clipboard/' + item.id, 'PATCH', { content: 'x', rev: 1 })).status, 404);
+  });
+
+  it('merges preference changes from different devices', async () => {
+    const send = body => fetch(baseUrl + '/api/prefs', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(r => r.json());
+    await fs.writeFile(path.join(tempDir, 'prefs.json'), '{}');
+    await Promise.all([
+      send({ favorites: { add: ['uuid-gen'] } }),
+      send({ favorites: { add: ['regex-tester'] } }),
+      send({ hiddenTools: { add: ['lotto-gen'] } }),
+    ]);
+    const merged = await send({ favorites: { remove: ['uuid-gen'] } });
+    assert.deepEqual(merged.favorites, ['regex-tester']);
+    assert.deepEqual(merged.hiddenTools, ['lotto-gen']);
+    assert.equal(merged.rev, 4);
+  });
+
+  it('keeps LAN checks away from the Supervisor network', () => {
+    assert.equal(isLanAddress('192.168.1.20'), true);
+    assert.equal(isLanAddress('172.30.32.2'), false);
+    assert.equal(isLanAddress('172.30.33.5'), false);
   });
 
   it('validates WoL magic packet and blocks SSRF on /api/ssl-check', async () => {

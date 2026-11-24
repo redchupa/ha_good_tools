@@ -3,9 +3,18 @@
 > **이 문서는 작업 중단(사용량 제한 등) 시 다른 모델이나 세션이 즉시 작업을 이어받을 수 있도록 매 마일스톤마다 갱신됩니다.**
 
 - **최종 갱신일** 2026-11-24 KST
-- **현재 작업** v1.4.0 제품 개선 및 사전 빌드 배포
+- **현재 작업** v1.5.0 리뷰 결함 수정, 파일 변환기·인코더 업그레이드
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (**주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
+
+## v1.5.0 개발 (Claude 리뷰 반영)
+
+- 근거 문서: [CLAUDE_REVIEW_v1.4.1.md](CLAUDE_REVIEW_v1.4.1.md). H1·H2·M1·M2, L1~L6, G1~G3·G5 대응과 개선안 A·B·C, 차순위(HA 사용자 ID 안내)를 모두 반영했습니다.
+- 신규: 파일 변환기(`file-convert`, PDF→JPG·PNG·WebP, 이미지 형식·크기, 이미지→PDF, ZIP 저장). 인코더를 형식 간 변환기로 교체(Plain·URL·HTML·Base64·Base64URL·ASCII Hex·Hex·8/2/10진수·Unicode·Gzip·Zlib·Deflate, 자동 감지, JWT 만료 표시).
+- 서버: 메모 고정 보존(고정 20 + 일반 50), 메모 수정 `PATCH` + `rev` 충돌 409, prefs `PATCH {add, remove}` 병합과 `rev`, 손상 파일 `*.corrupt-<시각>.json` 격리 + `/api/health`의 `recovered`, LAN 점검에서 172.30.32.0/23 제외, HA 403 응답에 본인 사용자 ID.
+- 배포: 같은 버전 재게시 차단, 아키텍처별 QEMU 실행 health·버전 확인 후 태그 생성, 버전 문자열 4곳 일치 검사, `release-guard.yml`(이미지 없는 버전 상향 차단).
+- 서브 HA 검증(작업 트리, SSH 계정 `nrgnc`): 백엔드 16/16, 프론트 21/21, TypeScript·Vite 빌드, npm audit 두 범위 0건, Chromium 모바일 E2E(같은 파일 재선택, 변환기 PDF→PNG·ZIP·PNG→JPG, 인코더, LAN IP HTTP에서 AES 왕복·HMAC·사용 불가 표시) 통과. 초기 JS gzip 106.81 kB.
+- SSH 컨테이너에는 Node·npm·Chromium이 기본 설치되어 있지 않습니다. 검증 전에 `sudo apk add nodejs npm chromium`이 필요하며 앱 재시작 시 사라집니다.
 
 ## v1.4.1 배포 검증
 
