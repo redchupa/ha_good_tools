@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 (2026-11-24)
+
+- **우편번호 조회 CDN 최신화**: 2026-11-30 종료 예정인 `t1.daumcdn.net` 도메인을 최신 카카오 우편번호 CDN(`t1.kakaocdn.net`)으로 교체.
+
 ## 1.0.1 (2026-11-24)
 
 - **Docker 빌드 오류 수정**: `NODE_ENV=production`을 프론트엔드 빌드 이후로 이동하고 `--include=dev`를 명시하여 `tsc`/`vite` 누락(`exit code 127`) 해결.

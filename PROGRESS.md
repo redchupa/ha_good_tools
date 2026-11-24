@@ -2,8 +2,8 @@
 
 > **이 문서는 작업 중단(사용량 제한 등) 시 다른 모델이나 세션이 즉시 작업을 이어받을 수 있도록 매 마일스톤마다 갱신됩니다.**
 
-- **최종 갱신 시각**: 2026-11-24 12:37 (KST)
-- **현재 상태**: `v1.0.1 Dockerfile 빌드 수정 반영 -> 서브 HA(192.168.1.129) 재설치 검증 중`
+- **최종 갱신 시각**: 2026-11-24 12:59 (KST)
+- **현재 상태**: `Phase 1~7 전체 완료 (v1.0.2 릴리즈 및 서브 HA 32종 도구 실동작 검증 통과)`
 - **GitHub 저장소**: `https://github.com/redchupa/ha_good_tools`
 - **테스트 대상 HA (서브 HA)**: `http://192.168.1.129` (포트 80 응답 200 확인됨. **주의: 메인 HA 192.168.1.118 및 nrgnc-ha MCP 절대 사용 금지**)
 
@@ -46,7 +46,7 @@
   - [x] `crypto-tool` (AES-256 암복호화, HMAC/SHA/MD5, 비밀번호 생성기)
   - [x] `rss-reader` (RSS/Atom 피드 리더 & `/data/feeds.json` 영속 저장)
 - [x] **Phase 6**: 빌드(`tsc -b && vite build` 0 errors), 프론트엔드 테스트(7/7 통과), 백엔드 테스트(5/5 통과), `README.md` / `DOCS.md` / `CHANGELOG.md` 작성 완료
-- [ ] **Phase 7**: Git 커밋·푸시, `v1.0.0` 태그 & GitHub Release 발행, 서브 HA(`http://192.168.1.129`) 설치 및 동작 검증
+- [x] **Phase 7**: Git 커밋·푸시, `v1.0.2` 태그 & GitHub Release 발행, 서브 HA(`http://192.168.1.129`) 설치 및 32종 전체 Ingress E2E 동작 검증 완료 (백엔드 프록시 API, SSRF 차단, 클라이언트 인터랙티브 도구, 전체 32개 라우트 0 에러 확인, 우편번호 CDN `t1.kakaocdn.net` 최신화 반영)
 
 ## 검증 명령어 요약
 - 백엔드 테스트: `cd good_tools/server && npm test` (5/5 pass)

@@ -39,7 +39,7 @@ export default function PostcodeTool() {
     }
 
     const script = document.createElement('script');
-    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    script.src = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
     script.async = true;
     script.onload = mountWidget;
     script.onerror = () => setError('다음 우편번호 스크립트를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
