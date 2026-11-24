@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { previewDocument } from '../utils/preview';
 import { downloadBlob } from '../utils/download';
 import { useEffect, useMemo, useState } from 'react';
@@ -18,7 +19,8 @@ const DEFAULT_MD = `# Good Tools 웹 에디터
 `;
 
 export default function WebEditorTool() {
-  const [content, setContent] = useState(() => localStorage.getItem('good_tools_editor') || DEFAULT_MD);
+  const ui = useText();
+  const [content, setContent] = useState(() => localStorage.getItem('good_tools_editor') || ui(DEFAULT_MD, '# Good Tools editor\n\nWrite **Markdown** here to preview and export your document.'));
 
   useEffect(() => {
     localStorage.setItem('good_tools_editor', content);
@@ -27,7 +29,7 @@ export default function WebEditorTool() {
   const html = useMemo(() => marked.parse(content, { async: false }) as string, [content]);
 
   const insertSnippet = (before: string, after = '') => {
-    setContent((prev) => `${prev}\n${before}텍스트${after}`);
+    setContent((prev) => ui(`${prev}\n${before}텍스트${after}`, `${prev}\n${before}text${after}`));
   };
 
   const downloadFile = (text: string, filename: string, mime: string) => {
@@ -40,11 +42,11 @@ export default function WebEditorTool() {
       <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800">
         {[
           { label: 'H2', action: () => insertSnippet('## ') },
-          { label: '굵게', action: () => insertSnippet('**', '**') },
-          { label: '기울임', action: () => insertSnippet('*', '*') },
-          { label: '코드', action: () => insertSnippet('```\n', '\n```') },
-          { label: '목록', action: () => insertSnippet('- ') },
-          { label: '인용', action: () => insertSnippet('> ') },
+          { label: ui('굵게', "Bold"), action: () => insertSnippet('**', '**') },
+          { label: ui('기울임', "Italic"), action: () => insertSnippet('*', '*') },
+          { label: ui('코드', "Code"), action: () => insertSnippet('```\n', '\n```') },
+          { label: ui('목록', "List"), action: () => insertSnippet('- ') },
+          { label: ui('인용', "Quote"), action: () => insertSnippet('> ') },
         ].map((btn) => (
           <button
             key={btn.label}
@@ -57,7 +59,7 @@ export default function WebEditorTool() {
         ))}
 
         <div className="ml-auto flex items-center gap-1.5">
-          <CopyButton text={html} label="HTML 복사" />
+          <CopyButton text={html} label={ui("HTML 복사", "Copy HTML")} />
           <button
             type="button"
             onClick={() => downloadFile(content, 'document.md', 'text/markdown')}
@@ -81,7 +83,7 @@ export default function WebEditorTool() {
           onChange={(e) => setContent(e.target.value)}
           rows={18}
           className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-sm outline-none focus:border-indigo-500 resize-y"
-          placeholder="Markdown을 입력하세요..."
+          placeholder={ui("Markdown을 입력하세요...", "Enter Markdown...")}
         />
         <iframe
           title="Markdown Preview"

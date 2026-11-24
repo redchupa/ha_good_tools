@@ -1,3 +1,5 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { Minimize2 } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -38,6 +40,7 @@ function minifySource(code: string, lang: MinLang): string {
 }
 
 export default function CodeMinifyTool() {
+  const ui = useText();
   const [lang, setLang] = useState<MinLang>('css');
   const [input, setInput] = useState('/* Sample CSS */\nbody {\n  margin: 0;\n  padding: 16px;\n  color: #111827;\n}');
   const [output, setOutput] = useState('');
@@ -48,7 +51,7 @@ export default function CodeMinifyTool() {
     try {
       setOutput(minifySource(input, lang));
     } catch (err) {
-      setError(err instanceof Error ? err.message : '압축 중 오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : ui('압축 중 오류가 발생했습니다.', "Could not minify the code."));
     }
   };
 
@@ -77,15 +80,15 @@ export default function CodeMinifyTool() {
           onClick={runMinify}
           className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium cursor-pointer"
         >
-          <Minimize2 className="w-3.5 h-3.5" /> 코드 압축
+          <Minimize2 className="w-3.5 h-3.5" /> {ui("코드 압축", "Minify code")}
         </button>
       </div>
 
-      {error && <div className="text-xs text-rose-500 font-mono">{error}</div>}
+      {error && <div className="text-xs text-rose-500 font-mono"><Diagnostic text={error} /></div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <div className="text-xs text-slate-500">원본 ({inBytes.toLocaleString()} bytes)</div>
+          <div className="text-xs text-slate-500">{ui("원본 (", "Original (")}{inBytes.toLocaleString()} bytes)</div>
           <textarea
             rows={14}
             value={input}
@@ -96,7 +99,7 @@ export default function CodeMinifyTool() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500">
-              압축 결과 ({outBytes.toLocaleString()} bytes{output ? ` · ${savedPct}% 절감` : ''})
+              {ui("압축 결과 (", "Minified (")}{outBytes.toLocaleString()} bytes{output ? ui(` · ${savedPct}% 절감`, ` · ${savedPct}% smaller`) : ''})
             </span>
             <CopyButton text={output} />
           </div>

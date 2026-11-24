@@ -1,3 +1,4 @@
+import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { useMemo, useState } from 'react';
 import { encrypt, decrypt, textHashes } from '../utils/secureCrypto';
@@ -5,7 +6,8 @@ import { RefreshCw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
 
 export default function CryptoTool() {
-  const t = useText();
+  const ui = useText();
+  const t = ui;
   const [tab, setTab] = useState<'aes' | 'hmac' | 'password'>('aes');
   const [text, setText] = useState('Home Assistant Secret Payload');
   const [secret, setSecret] = useState('');
@@ -21,7 +23,7 @@ export default function CryptoTool() {
   const transform = async (mode: 'encrypt' | 'decrypt') => {
     setError(''); setOutput(''); setBusy(true);
     try { setOutput(await (mode === 'encrypt' ? encrypt(text,secret) : decrypt(text.trim(),secret))); }
-    catch (e) { setError(e instanceof Error ? e.message : '암호 문구와 입력을 확인해 주세요.'); }
+    catch (e) { setError(e instanceof Error ? e.message : ui('암호 문구와 입력을 확인해 주세요.', "Check the passphrase and input.")); }
     finally { setBusy(false); }
   };
   const genPassword = () => {
@@ -65,32 +67,32 @@ export default function CryptoTool() {
             type="password"
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
-            placeholder="비밀 키 (Passphrase)"
+            placeholder={ui("비밀 키 (Passphrase)", "Passphrase")}
             className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono"
           />
           <textarea
             rows={5}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="평문 또는 AES 암호문 입력..."
+            placeholder={ui("평문 또는 AES 암호문 입력...", "Enter plaintext or AES ciphertext...")}
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
           <div className="flex gap-2">
             <button type="button" disabled={busy} onClick={() => transform('encrypt')} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium cursor-pointer">
-              AES 암호화
+              {ui("AES 암호화", "Encrypt with AES")}
             </button>
             <button type="button" disabled={busy} onClick={() => transform('decrypt')} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium cursor-pointer">
-              AES 복호화
+              {ui("AES 복호화", "Decrypt AES")}
             </button>
             <CopyButton text={output} className="ml-auto" />
           </div>
           {busy && <p role="status" className="text-xs text-slate-500">{t('키를 만드는 중입니다. 기기에 따라 몇 초 걸릴 수 있습니다.','Deriving the key. This can take a few seconds on slower devices.')}</p>}
-          {error && <div className="text-xs text-rose-500">{error}</div>}
+          {error && <div className="text-xs text-rose-500"><Diagnostic text={error} /></div>}
           <textarea
             readOnly
             rows={4}
             value={output}
-            placeholder="결과..."
+            placeholder={ui("결과...", "Result...")}
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
         </div>
@@ -128,19 +130,19 @@ export default function CryptoTool() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-4">
             <label className="text-xs flex items-center gap-2">
-              길이: <strong>{pwLen}자</strong>
+              {ui("길이:", "Length:")} <strong>{pwLen}{ui("자", " characters")}</strong>
               <input type="range" min={8} max={64} value={pwLen} onChange={(e) => setPwLen(Number(e.target.value))} />
             </label>
             <label className="text-xs flex items-center gap-1.5">
               <input type="checkbox" checked={pwSymbols} onChange={(e) => setPwSymbols(e.target.checked)} />
-              특수문자 포함
+              {ui("특수문자 포함", "Include symbols")}
             </label>
             <button
               type="button"
               onClick={genPassword}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> 생성
+              <RefreshCw className="w-3.5 h-3.5" /> {ui("생성", "Generate")}
             </button>
           </div>
           {password && (

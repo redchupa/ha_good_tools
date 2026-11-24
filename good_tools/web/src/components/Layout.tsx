@@ -100,7 +100,7 @@ export function Layout({
         <button
           onClick={() => setSidebarOpen(false)}
           className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-          aria-label="메뉴 닫기"
+          aria-label={lang === 'en' ? 'Close menu' : '메뉴 닫기'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -220,7 +220,7 @@ export function Layout({
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-            aria-label="메뉴 열기"
+            aria-label={lang === 'en' ? 'Open menu' : '메뉴 열기'}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -254,7 +254,7 @@ export function Layout({
             <button
               type="button"
               onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')}
-              title="언어 전환 (한국어 / English)"
+              title={lang === 'en' ? 'Switch language (English / Korean)' : '언어 전환 (한국어 / English)'}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
             >
               <Languages className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export function Layout({
             </div>
             <div className="max-h-80 overflow-y-auto p-2 space-y-0.5">
               {filteredTools.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400">일치하는 도구가 없습니다.</div>
+                <div className="py-8 text-center text-sm text-slate-400">{lang === 'en' ? 'No matching tools.' : '일치하는 도구가 없습니다.'}</div>
               ) : (
                 filteredTools.map((tool) => (
                   <button

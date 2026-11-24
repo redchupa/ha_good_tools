@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -6,6 +7,7 @@ import { generateUuidV4, generateUuidV7, generateUlid, generateNanoId } from '..
 type IdType = 'uuidv4' | 'uuidv7' | 'ulid' | 'nanoid';
 
 export default function UuidGenTool() {
+  const ui = useText();
   const [type, setType] = useState<IdType>('uuidv7');
   const [count, setCount] = useState(5);
   const [uppercase, setUppercase] = useState(false);
@@ -34,10 +36,10 @@ export default function UuidGenTool() {
       <div className="flex flex-wrap items-center gap-3">
         {(
           [
-            ['uuidv4', 'UUID v4 (랜덤)'],
-            ['uuidv7', 'UUID v7 (시간순)'],
+            ['uuidv4', ui('UUID v4 (랜덤)', "UUID v4 (random)")],
+            ['uuidv7', ui('UUID v7 (시간순)', "UUID v7 (time-ordered)")],
             ['ulid', 'ULID'],
-            ['nanoid', 'NanoID (21자)'],
+            ['nanoid', ui('NanoID (21자)', "NanoID (21 characters)")],
           ] as [IdType, string][]
         ).map(([t, label]) => (
           <button
@@ -65,7 +67,7 @@ export default function UuidGenTool() {
           className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
         >
           {[1, 5, 10, 20, 50, 100].map((c) => (
-            <option key={c} value={c}>{c}개</option>
+            <option key={c} value={c}>{c}{ui("개", " items")}</option>
           ))}
         </select>
 
@@ -78,7 +80,7 @@ export default function UuidGenTool() {
               generate(type, count, e.target.checked, noHyphen);
             }}
           />
-          대문자
+          {ui("대문자", "Uppercase")}
         </label>
 
         <label className="flex items-center gap-1.5 text-xs">
@@ -90,7 +92,7 @@ export default function UuidGenTool() {
               generate(type, count, uppercase, e.target.checked);
             }}
           />
-          하이픈 제거
+          {ui("하이픈 제거", "Remove hyphens")}
         </label>
 
         <div className="ml-auto flex gap-2">
@@ -99,9 +101,9 @@ export default function UuidGenTool() {
             onClick={() => generate()}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> 새로 생성
+            <RefreshCw className="w-3.5 h-3.5" /> {ui("새로 생성", "Generate again")}
           </button>
-          <CopyButton text={ids.join('\n')} label="전체 복사" />
+          <CopyButton text={ids.join('\n')} label={ui("전체 복사", "Copy all")} />
         </div>
       </div>
 

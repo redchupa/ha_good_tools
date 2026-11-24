@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { Dices, RotateCcw } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -11,6 +12,7 @@ function ballColor(n: number) {
 }
 
 export default function LottoGenTool() {
+  const ui = useText();
   const [gameCount, setGameCount] = useState(5);
   const [fixed, setFixed] = useState<number[]>([]);
   const [excluded, setExcluded] = useState<number[]>([]);
@@ -55,14 +57,14 @@ export default function LottoGenTool() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm">
-          게임 수:
+          {ui("게임 수:", "Games:")}
           <select
             value={gameCount}
             onChange={(e) => setGameCount(Number(e.target.value))}
             className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
           >
             {[1, 2, 3, 5, 10].map((c) => (
-              <option key={c} value={c}>{c}게임</option>
+              <option key={c} value={c}>{c}{ui("게임", " games")}</option>
             ))}
           </select>
         </label>
@@ -72,7 +74,7 @@ export default function LottoGenTool() {
           onClick={generate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium cursor-pointer"
         >
-          <Dices className="w-4 h-4" /> 번호 추첨
+          <Dices className="w-4 h-4" /> {ui("번호 추첨", "Draw numbers")}
         </button>
 
         <button
@@ -83,16 +85,16 @@ export default function LottoGenTool() {
           }}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5" /> 고정/제외 초기화
+          <RotateCcw className="w-3.5 h-3.5" /> {ui("고정/제외 초기화", "Reset selections")}
         </button>
 
-        {games.length > 0 && <CopyButton text={copyText} label="결과 복사" className="ml-auto" />}
+        {games.length > 0 && <CopyButton text={copyText} label={ui("결과 복사", "Copy results")} className="ml-auto" />}
       </div>
 
       {/* Number Picker for Fixed / Excluded */}
       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-2">
         <div className="text-xs text-slate-500 flex flex-wrap gap-3">
-          <span>번호 클릭: 1회 <strong className="text-emerald-600">고정수({fixed.length}/5)</strong> → 2회 <strong className="text-rose-500">제외수({excluded.length})</strong> → 3회 해제</span>
+          <span>{ui("번호 클릭: 1회", "Click once to")} <strong className="text-emerald-600">{ui("고정수(", " include (")}{fixed.length}/5)</strong> {ui("→ 2회", " → twice to")} <strong className="text-rose-500">{ui("제외수(", " exclude (")}{excluded.length})</strong> {ui("→ 3회 해제", " → three times to clear")}</span>
         </div>
         <div className="grid grid-cols-9 sm:grid-cols-15 gap-1.5">
           {Array.from({ length: 45 }, (_, i) => i + 1).map((n) => {
@@ -141,7 +143,7 @@ export default function LottoGenTool() {
                   ))}
                 </div>
                 <span className="ml-auto text-xs text-slate-500 font-mono">
-                  합계 {sum} · 홀짝 {odd}:{6 - odd}
+                  {ui("합계", "Sum")} {sum} {ui("· 홀짝", " · odd/even")} {odd}:{6 - odd}
                 </span>
               </div>
             );

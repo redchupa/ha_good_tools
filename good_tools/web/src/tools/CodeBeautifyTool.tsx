@@ -1,3 +1,5 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { format } from 'prettier/standalone';
 import { format as formatSql } from 'sql-formatter';
@@ -8,6 +10,7 @@ import { CopyButton } from '../components/CopyButton';
 type Lang = 'json' | 'js' | 'html' | 'css' | 'sql' | 'yaml';
 
 export default function CodeBeautifyTool() {
+  const ui = useText();
   const [lang, setLang] = useState<Lang>('json');
   const [indent, setIndent] = useState(2);
   const [input, setInput] = useState('{"app":"Good Tools","version":"1.0.0","features":["ingress","dark-mode","32-tools"]}');
@@ -33,7 +36,7 @@ export default function CodeBeautifyTool() {
       }
       setOutput(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '포맷팅 중 오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : ui('포맷팅 중 오류가 발생했습니다.', "Could not format the code."));
     }
   };
 
@@ -58,8 +61,8 @@ export default function CodeBeautifyTool() {
           onChange={(e) => setIndent(Number(e.target.value))}
           className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
         >
-          <option value={2}>들여쓰기 2칸</option>
-          <option value={4}>들여쓰기 4칸</option>
+          <option value={2}>{ui("들여쓰기 2칸", "2-space indent")}</option>
+          <option value={4}>{ui("들여쓰기 4칸", "4-space indent")}</option>
         </select>
 
         <button
@@ -67,11 +70,11 @@ export default function CodeBeautifyTool() {
           onClick={runFormat}
           className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium cursor-pointer"
         >
-          <Sparkles className="w-3.5 h-3.5" /> 코드 정렬
+          <Sparkles className="w-3.5 h-3.5" /> {ui("코드 정렬", "Format code")}
         </button>
       </div>
 
-      {error && <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-xs font-mono">{error}</div>}
+      {error && <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-xs font-mono"><Diagnostic text={error} /></div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <textarea
@@ -88,7 +91,7 @@ export default function CodeBeautifyTool() {
             readOnly
             rows={14}
             value={output}
-            placeholder="정렬 결과가 여기에 표시됩니다..."
+            placeholder={ui("정렬 결과가 여기에 표시됩니다...", "Formatted code appears here...")}
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
         </div>

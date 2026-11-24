@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { downloadBlob } from '../utils/download';
 import { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
@@ -5,6 +6,7 @@ import { CopyButton } from '../components/CopyButton';
 import { parseSmi, parseSrtOrVtt, shiftCues, cuesToSrt, cuesToVtt, cuesToSmi } from '../utils/subtitle';
 
 export default function SubtitleConvTool() {
+  const ui = useText();
   const [input, setInput] = useState(
     `<SYNC Start=1000><P Class=KRCC>안녕하세요!<br>자막 변환기입니다.\n<SYNC Start=3500><P Class=KRCC>&nbsp;\n<SYNC Start=4000><P Class=KRCC>SMI, SRT, VTT를 자유롭게 변환합니다.\n<SYNC Start=7000><P Class=KRCC>&nbsp;`
   );
@@ -53,7 +55,7 @@ export default function SubtitleConvTool() {
           className="text-xs"
         />
         <div className="flex items-center gap-2 text-xs">
-          <span>출력 형식:</span>
+          <span>{ui("출력 형식:", "Output format:")}</span>
           {(['srt', 'vtt', 'smi'] as const).map((fmt) => (
             <button
               key={fmt}
@@ -68,7 +70,7 @@ export default function SubtitleConvTool() {
           ))}
         </div>
         <label className="flex items-center gap-1.5 text-xs ml-auto">
-          싱크 이동(ms):
+          {ui("싱크 이동(ms):", "Time offset (ms):")}
           <input
             type="number"
             step={100}
@@ -81,7 +83,7 @@ export default function SubtitleConvTool() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <div className="text-xs font-semibold text-slate-500">원본 자막 (SMI / SRT / VTT 자동 인식)</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("원본 자막 (SMI / SRT / VTT 자동 인식)", "Source subtitles (SMI / SRT / VTT detected automatically)")}</div>
           <textarea
             rows={14}
             value={input}
@@ -92,7 +94,7 @@ export default function SubtitleConvTool() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">
-              변환 결과 ({cues.length}개 자막 블록)
+              {ui("변환 결과 (", "Result (")}{cues.length}{ui("개 자막 블록)", " subtitle blocks)")}
             </span>
             <div className="flex items-center gap-1.5">
               <CopyButton text={output} />
@@ -102,7 +104,7 @@ export default function SubtitleConvTool() {
                 disabled={!output}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium disabled:opacity-40 cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" /> 다운로드
+                <Download className="w-3.5 h-3.5" /> {ui("다운로드", "Download")}
               </button>
             </div>
           </div>

@@ -12,7 +12,8 @@ interface HashSet {
 }
 
 export default function FileChecksumTool() {
-  const t = useText();
+  const ui = useText();
+  const t = ui;
   const [sourceLabel, setSourceLabel] = useState('');
   const [textInput, setTextInput] = useState('');
   const [hashes, setHashes] = useState<HashSet | null>(null);
@@ -70,7 +71,7 @@ export default function FileChecksumTool() {
           rows={4}
           value={textInput}
           onChange={(e) => handleText(e.target.value)}
-          placeholder="또는 텍스트를 직접 입력해 해시 계산..."
+          placeholder={ui("또는 텍스트를 직접 입력해 해시 계산...", "Or type text to calculate its hash...")}
           className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-indigo-500"
         />
       </div>
@@ -79,17 +80,17 @@ export default function FileChecksumTool() {
         <input
           value={expected}
           onChange={(e) => setExpected(e.target.value)}
-          placeholder="기대하는 체크섬 값을 붙여넣으면 자동으로 일치 여부를 검사합니다..."
+          placeholder={ui("기대하는 체크섬 값을 붙여넣으면 자동으로 일치 여부를 검사합니다...", "Paste the expected checksum to compare...")}
           className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono"
         />
         {normExpected && hashes && (
           matchedAlgo ? (
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4" /> 일치 ({matchedAlgo.toUpperCase()})
+              <CheckCircle2 className="w-4 h-4" /> {ui("일치 (", "Match (")}{matchedAlgo.toUpperCase()})
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 text-xs font-semibold">
-              <XCircle className="w-4 h-4" /> 불일치
+              <XCircle className="w-4 h-4" /> {ui("불일치", "No match")}
             </span>
           )
         )}
@@ -99,7 +100,7 @@ export default function FileChecksumTool() {
       {!hashes && sourceLabel && <p role="status">{sourceLabel}</p>}
       {hashes && (
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-slate-500">대상: {sourceLabel}</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("대상:", "Source:")} {sourceLabel}</div>
           {(
             [
               ['MD5', hashes.md5],

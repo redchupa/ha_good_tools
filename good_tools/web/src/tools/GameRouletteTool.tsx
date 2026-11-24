@@ -4,20 +4,20 @@ import { RotateCw, Plus, X } from 'lucide-react';
 
 const PALETTE = ['#D9480F', '#1C7ED6', '#C2255C', '#2B8A3E', '#7048E8', '#0B7285', '#E67700', '#5C7CFA'];
 
-const PRESETS: Record<string, string[]> = {
-  '점심 메뉴': ['한식 백반', '국밥', '중식', '일식', '분식', '쌀국수', '햄버거', '샐러드'],
-  '야식 메뉴': ['치킨', '피자', '족발/보쌈', '떡볶이', '라면', '곱창'],
-  '카페 음료': ['아메리카노', '카페라떼', '바닐라라떼', '말차라떼', '에이드', '스무디'],
-};
-
 export default function GameRouletteTool() {
-  const t = useText();
+  const ui = useText();
+  const PRESETS: Record<string, string[]> = {
+    [ui('점심 메뉴', "Lunch")]: [ui('한식 백반', "Korean set meal"), ui('국밥', "Rice soup"), ui('중식', "Chinese"), ui('일식', "Japanese"), ui('분식', "Street food"), ui('쌀국수', "Pho"), ui('햄버거', "Burger"), ui('샐러드', "Salad")],
+    [ui('야식 메뉴', "Late-night snacks")]: [ui('치킨', "Chicken"), ui('피자', "Pizza"), ui('족발/보쌈', "Braised pork"), ui('떡볶이', "Spicy rice cakes"), ui('라면', "Ramen"), ui('곱창', "Grilled offal")],
+    [ui('카페 음료', "Coffee shop")]: [ui('아메리카노', "Americano"), ui('카페라떼', "Caffè latte"), ui('바닐라라떼', "Vanilla latte"), ui('말차라떼', "Matcha latte"), ui('에이드', "Fruit soda"), ui('스무디', "Smoothie")],
+  };
+  const t = ui;
   const [items, setItems] = useState<string[]>(() => {
     try {
       const list = JSON.parse(localStorage.getItem('good_tools_roulette') || 'null');
       if (Array.isArray(list) && list.length <= 12 && list.every(x => typeof x === 'string' && x.length <= 14)) return list;
     } catch { /* Restore the preset if local storage is unavailable. */ }
-    return PRESETS['점심 메뉴'];
+    return PRESETS[ui('점심 메뉴', "Lunch")];
   });
   const [newItem, setNewItem] = useState('');
   const [rotation, setRotation] = useState(0);
@@ -122,7 +122,7 @@ export default function GameRouletteTool() {
             <div className="text-sm font-semibold text-indigo-500 animate-pulse">{t('두근두근 돌아가는 중...','Spinning…')}</div>
           ) : winner ? (
             <div className="px-5 py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-300 dark:border-indigo-500/40 text-lg font-extrabold text-indigo-700 dark:text-indigo-300">
-              당첨: {winner}
+              {ui("당첨:", "Winner:")} {winner}
             </div>
           ) : (
             <div className="text-xs text-slate-400">{t('돌리기 버튼을 눌러 오늘의 선택을 뽑아보세요','Spin to pick an item.')}</div>
@@ -163,7 +163,7 @@ export default function GameRouletteTool() {
           <input
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
-            placeholder="항목 추가 (최대 12개)..."
+            placeholder={ui("항목 추가 (최대 12개)...", "Add an item (up to 12)...")}
             className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
           />
           <button
@@ -171,7 +171,7 @@ export default function GameRouletteTool() {
             disabled={spinning || !newItem.trim() || items.length >= 12}
             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium disabled:opacity-40 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> 추가
+            <Plus className="w-4 h-4" /> {ui("추가", "Added")}
           </button>
         </form>
 

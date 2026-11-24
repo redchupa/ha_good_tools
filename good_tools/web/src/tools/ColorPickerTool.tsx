@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
@@ -48,6 +49,7 @@ const SWATCHES = [
 ];
 
 export default function ColorPickerTool() {
+  const ui = useText();
   const [hex, setHex] = useState('#4f46e5');
   const [bgHex, setBgHex] = useState('#ffffff');
 
@@ -69,7 +71,7 @@ export default function ColorPickerTool() {
               className="w-20 h-20 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer"
             />
             <div className="space-y-1.5 flex-1">
-              <div className="text-xs text-slate-500">HEX 코드</div>
+              <div className="text-xs text-slate-500">{ui("HEX 코드", "Hex code")}</div>
               <input
                 value={hex}
                 onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setHex(e.target.value)}
@@ -96,24 +98,24 @@ export default function ColorPickerTool() {
         {/* WCAG Contrast Checker */}
         <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">WCAG 명암비 검사</span>
+            <span className="text-xs font-semibold text-slate-500">{ui("WCAG 명암비 검사", "WCAG contrast check")}</span>
             <label className="flex items-center gap-1.5 text-xs">
-              배경색:
+              {ui("배경색:", "Background:")}
               <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
             </label>
           </div>
           <div className="p-5 rounded-xl border border-slate-200 text-center space-y-1" style={{ backgroundColor: bgHex, color: hex }}>
-            <div className="text-xl font-bold">가독성 미리보기 AaBbCc</div>
-            <div className="text-xs">본문 텍스트 크기에서의 색상 대비를 확인하세요.</div>
+            <div className="text-xl font-bold">{ui("가독성 미리보기 AaBbCc", "Readability preview AaBbCc")}</div>
+            <div className="text-xs">{ui("본문 텍스트 크기에서의 색상 대비를 확인하세요.", "Check the contrast at body text size.")}</div>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="font-mono font-bold text-base">{ratio.toFixed(2)} : 1</span>
             <div className="flex gap-1.5">
               <span className={`px-2 py-0.5 rounded-full font-semibold ${ratio >= 4.5 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-rose-500/15 text-rose-500'}`}>
-                AA {ratio >= 4.5 ? '통과' : '미달'}
+                AA {ratio >= 4.5 ? ui('통과', "Pass") : ui('미달', "Fail")}
               </span>
               <span className={`px-2 py-0.5 rounded-full font-semibold ${ratio >= 7 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-rose-500/15 text-rose-500'}`}>
-                AAA {ratio >= 7 ? '통과' : '미달'}
+                AAA {ratio >= 7 ? ui('통과', "Pass") : ui('미달', "Fail")}
               </span>
             </div>
           </div>
@@ -121,7 +123,7 @@ export default function ColorPickerTool() {
       </div>
 
       <div>
-        <div className="text-xs font-semibold text-slate-500 mb-2">빠른 팔레트 (Tailwind)</div>
+        <div className="text-xs font-semibold text-slate-500 mb-2">{ui("빠른 팔레트 (Tailwind)", "Quick palette (Tailwind)")}</div>
         <div className="grid grid-cols-8 sm:grid-cols-16 gap-2">
           {SWATCHES.map((s) => (
             <button

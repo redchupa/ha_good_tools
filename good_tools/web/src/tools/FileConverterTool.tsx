@@ -1,3 +1,4 @@
+import { Diagnostic } from '../components/Diagnostic';
 import { useEffect, useRef, useState } from 'react';
 import { Upload, Download, FileArchive, X } from 'lucide-react';
 import { zipSync } from 'fflate';
@@ -264,7 +265,7 @@ export default function FileConverterTool() {
           </button>
         </div>
       )}
-      {error && <div role="alert" className="text-xs text-rose-500">{error}</div>}
+      {error && <div role="alert" className="text-xs text-rose-500"><Diagnostic text={error} /></div>}
 
       {outputs.length > 0 && (
         <div className="space-y-3">

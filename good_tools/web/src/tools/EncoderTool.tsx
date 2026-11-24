@@ -1,3 +1,4 @@
+import { Diagnostic } from '../components/Diagnostic';
 import { useMemo, useState } from 'react';
 import { ArrowDownUp, Wand2 } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -20,9 +21,10 @@ const PRESETS: { ko: string; en: string; from: CodecId; to: CodecId }[] = [
 ];
 
 export default function EncoderTool() {
-  const t = useText();
+  const ui = useText();
+  const t = ui;
   const [tab, setTab] = useState<Tab>('convert');
-  const [input, setInput] = useState('안녕하세요 Home Assistant Good Tools!');
+  const [input, setInput] = useState(ui('안녕하세요 Home Assistant Good Tools!', "Hello from Home Assistant Good Tools!"));
   const [from, setFrom] = useState<CodecId>('plain');
   const [to, setTo] = useState<CodecId>('base64');
   const [options, setOptions] = useState<CodecOptions>(DEFAULT_OPTIONS);
@@ -135,7 +137,7 @@ export default function EncoderTool() {
               <textarea rows={10} readOnly value={result.output} spellCheck={false} aria-label={t('결과', 'Result')} className={area} />
             </div>
           </div>
-          {result.error && <div role="alert" className="text-xs text-rose-500">{result.error}</div>}
+          {result.error && <div role="alert" className="text-xs text-rose-500"><Diagnostic text={result.error} /></div>}
           {['gzip', 'zlib', 'deflate'].includes(to) && (
             <p className="text-[11px] text-slate-400">{t('압축 결과는 바이너리라서 Base64로 보여 줍니다. 압축 해제 입력은 Base64나 Hex 모두 받을 수 있습니다.',
               'Compressed output is binary, so it is shown as Base64. Decompression accepts Base64 or hex input.')}</p>
@@ -149,7 +151,7 @@ export default function EncoderTool() {
             placeholder={t('JWT를 붙여넣으세요 (Bearer 접두어 포함 가능)', 'Paste a JWT (a "Bearer " prefix is fine)')} className={area} />
           <p className="text-[11px] text-slate-400">{t('토큰은 이 기기에서만 해석하며 서명은 검증하지 않습니다. 실사용 토큰은 공유하지 마세요.',
             'Decoded on this device only; the signature is not verified. Do not share live tokens.')}</p>
-          {jwtView?.error && <div role="alert" className="text-xs text-rose-500">{jwtView.error}</div>}
+          {jwtView?.error && <div role="alert" className="text-xs text-rose-500"><Diagnostic text={jwtView.error} /></div>}
           {jwtView?.view && (
             <div className="space-y-3">
               {jwtView.view.times.length > 0 && (

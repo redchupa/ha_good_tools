@@ -1,3 +1,5 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useEffect, useRef, useState } from 'react';
 import { GIFEncoder, quantize, applyPalette } from 'gifenc';
 import { Upload, Download, Trash2, ArrowUp, ArrowDown, Play } from 'lucide-react';
@@ -9,6 +11,7 @@ interface FrameItem {
 }
 
 export default function GifGenTool() {
+  const ui = useText();
   const [frames, setFrames] = useState<FrameItem[]>([]);
   const [delayMs, setDelayMs] = useState(400);
   const [width, setWidth] = useState(480);
@@ -30,7 +33,7 @@ export default function GifGenTool() {
   const handleFiles = (fileList: FileList | null) => {
     if (!fileList) return;
     if (fileList.length + frames.length > 32 || Array.from(fileList).some(f => f.size > 8 * 1024 * 1024)) {
-      return setError('GIF는 최대 32장, 장당 8 MiB까지 지원합니다.');
+      return setError(ui('GIF는 최대 32장, 장당 8 MiB까지 지원합니다.', "Choose up to 32 frames, no more than 8 MiB each."));
     }
     setError('');
     const added: FrameItem[] = [];
@@ -88,7 +91,7 @@ export default function GifGenTool() {
       if (!active.current) return;
       setGifUrl(URL.createObjectURL(blob));
     } catch {
-      setError('GIF를 만들 수 없습니다. 이미지 크기와 형식을 확인해 주세요.');
+      setError(ui('GIF를 만들 수 없습니다. 이미지 크기와 형식을 확인해 주세요.', "Could not create the GIF. Check the image sizes and formats."));
     } finally {
       setBusy(false);
     }
@@ -98,21 +101,21 @@ export default function GifGenTool() {
     <div className="space-y-5">
       <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40 transition-colors">
         <Upload className="w-6 h-6 text-indigo-500" />
-        <span className="text-sm font-medium">이미지 여러 장을 선택하거나 클릭해 추가하세요 (최소 2장)</span>
-        <span className="text-xs text-slate-400">PNG, JPG, WebP 지원 · 모든 처리는 브라우저 내에서 로컬로 수행됩니다</span>
+        <span className="text-sm font-medium">{ui("이미지 여러 장을 선택하거나 클릭해 추가하세요 (최소 2장)", "Choose at least two images")}</span>
+        <span className="text-xs text-slate-400">{ui("PNG, JPG, WebP 지원 · 모든 처리는 브라우저 내에서 로컬로 수행됩니다", "Supports PNG, JPG and WebP. Images stay in your browser.")}</span>
         <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
       </label>
 
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert"><Diagnostic text={error} /></p>}
       {frames.length > 0 && (
         <>
           <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
             <label className="text-xs font-medium flex items-center gap-2">
-              프레임 간격: <strong>{delayMs}ms</strong>
+              {ui("프레임 간격:", "Frame interval:")} <strong>{delayMs}ms</strong>
               <input type="range" min={80} max={2000} step={20} value={delayMs} onChange={(e) => setDelayMs(Number(e.target.value))} />
             </label>
             <label className="text-xs font-medium flex items-center gap-2">
-              출력 너비: <strong>{width}px</strong>
+              {ui("출력 너비:", "Output width:")} <strong>{width}px</strong>
               <input type="range" min={160} max={800} step={40} value={width} onChange={(e) => setWidth(Number(e.target.value))} />
             </label>
             <button
@@ -122,7 +125,7 @@ export default function GifGenTool() {
               className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-40 cursor-pointer"
             >
               <Play className="w-4 h-4" />
-              {busy ? '생성 중...' : `GIF 생성 (${frames.length}프레임)`}
+              {busy ? ui('생성 중...', "Generating...") : ui(`GIF 생성 (${frames.length}프레임)`, `Create GIF (${frames.length} frames)`)}
             </button>
           </div>
 
@@ -153,7 +156,7 @@ export default function GifGenTool() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium"
           >
             <Download className="w-4 h-4" />
-            GIF 다운로드
+            {ui("GIF 다운로드", "Download GIF")}
           </a>
         </div>
       )}

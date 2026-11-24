@@ -1,3 +1,5 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useState } from 'react';
 import { ExternalLink, Search } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -10,6 +12,7 @@ interface UnshortenResult {
 }
 
 export default function LongUrlTool() {
+  const ui = useText();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,10 +31,10 @@ export default function LongUrlTool() {
         body: JSON.stringify({ url: url.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '추적 실패');
+      if (!res.ok) throw new Error(data.error || ui('추적 실패', "Trace failed"));
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '요청 중 오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : ui('요청 중 오류가 발생했습니다.', "Request failed."));
     } finally {
       setLoading(false);
     }
@@ -43,7 +46,7 @@ export default function LongUrlTool() {
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="단축 URL 입력 (예: https://bit.ly/..., https://t.co/...)"
+          placeholder={ui("단축 URL 입력 (예: https://bit.ly/..., https://t.co/...)", "Enter a short URL (e.g. https://bit.ly/...)")}
           className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:border-indigo-500"
         />
         <button
@@ -52,13 +55,13 @@ export default function LongUrlTool() {
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-40 cursor-pointer"
         >
           <Search className="w-4 h-4" />
-          {loading ? '추적 중...' : '원주소 추적'}
+          {loading ? ui('추적 중...', "Tracing...") : ui('원주소 추적', "Trace URL")}
         </button>
       </form>
 
       {error && (
         <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-sm">
-          {error}
+          <Diagnostic text={error} />
         </div>
       )}
 
@@ -67,7 +70,7 @@ export default function LongUrlTool() {
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/30 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                최종 목적지 URL ({result.hops}단계)
+                {ui("최종 목적지 URL (", "Destination URL (")}{result.hops}{ui("단계)", " hops)")}
               </span>
               <div className="flex items-center gap-1.5">
                 <CopyButton text={result.finalUrl} />
@@ -77,7 +80,7 @@ export default function LongUrlTool() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium"
                 >
-                  열기 <ExternalLink className="w-3 h-3" />
+                  {ui("열기", "Open")} <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             </div>
@@ -85,7 +88,7 @@ export default function LongUrlTool() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-slate-500">리다이렉트 경로</div>
+            <div className="text-xs font-semibold text-slate-500">{ui("리다이렉트 경로", "Redirect chain")}</div>
             {result.chain.map((step) => (
               <div
                 key={step.hop}

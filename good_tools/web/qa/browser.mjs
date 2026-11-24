@@ -108,6 +108,24 @@ try {
   await page.goto(base);await page.getByText('최근 사용한 도구').waitFor();
   await page.keyboard.press('Control+k');
   await page.locator('input[placeholder*=키워드]').waitFor();
+  await page.keyboard.press('Escape');
+  await page.unroute('**/api/prefs');
+  await open('csv-json');
+  const csv = page.locator('textarea').first();
+  await csv.fill('이름,room\n거실,kitchen');
+  await page.getByTitle('언어 전환 (한국어 / English)').click();
+  await page.getByText('CSV / TSV input (paste from a spreadsheet)').waitFor();
+  assert.equal(await csv.inputValue(), '이름,room\n거실,kitchen');
+  await csv.fill('a,a\n1,2');
+  await page.getByText('Column names must be unique.').waitFor();
+  await page.reload();
+  await page.getByTitle('Switch language (English / Korean)').waitFor();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  await open('unit-date-calc');
+  await page.getByText('Everyday unit conversions').waitFor();
+  await page.getByTitle('Switch language (English / Korean)').click();
+  await page.getByText('생활 단위 빠른 변환').waitFor();
+  console.log('PASS: language switch, user input preservation, English CSV errors, persistence and switching back');
   assert.deepEqual(errors,[]);
   console.log('PASS: bundle budget, delayed preferences, mobile file hash/cancel/re-pick, PDF extraction, file converter (PDF→PNG, ZIP, PNG→JPG), encoder (hex, gzip detect), '
     + (lanBase ? 'HTTP crypto round trip and availability chips, ' : 'HTTP checks skipped (no LAN address), ') + 'reduced motion, recent tools, keyboard input');

@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
 
 interface KeyInfo {
@@ -13,6 +14,7 @@ interface KeyInfo {
 }
 
 export default function KeyCodeTool() {
+  const ui = useText();
   const [last, setLast] = useState<KeyInfo | null>(null);
   const [history, setHistory] = useState<KeyInfo[]>([]);
 
@@ -62,7 +64,7 @@ export default function KeyCodeTool() {
             </div>
           </div>
         ) : (
-          <div className="text-sm text-slate-500">아무 키보드 키나 눌러보세요. 이벤트 정보가 실시간으로 표시됩니다.</div>
+          <div className="text-sm text-slate-500">{ui("아무 키보드 키나 눌러보세요. 이벤트 정보가 실시간으로 표시됩니다.", "Press any key to see its event details.")}</div>
         )}
       </div>
 
@@ -84,7 +86,7 @@ export default function KeyCodeTool() {
 
       {history.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-xs font-semibold text-slate-500">최근 입력 로그</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("최근 입력 로그", "Recent key events")}</div>
           <div className="flex flex-wrap gap-1.5">
             {history.map((h, i) => (
               <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-xs">

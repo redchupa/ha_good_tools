@@ -1,15 +1,16 @@
+import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
 import { Maximize2, Power, AlertTriangle } from 'lucide-react';
 
-const PRESETS = [
-  { name: '순백색', color: '#ffffff' },
-  { name: '따뜻한 조명', color: '#fff3c4' },
-  { name: '주광색', color: '#e0f2fe' },
-  { name: '야간 적색', color: '#ef4444' },
-  { name: '그린', color: '#22c55e' },
-];
-
 export default function FlashlightTool() {
+  const ui = useText();
+  const PRESETS = [
+    { name: ui('순백색', "Pure white"), color: '#ffffff' },
+    { name: ui('따뜻한 조명', "Warm white"), color: '#fff3c4' },
+    { name: ui('주광색', "Daylight"), color: '#e0f2fe' },
+    { name: ui('야간 적색', "Night red"), color: '#ef4444' },
+    { name: ui('그린', "Green"), color: '#22c55e' },
+  ];
   const [on, setOn] = useState(false);
   const [color, setColor] = useState('#ffffff');
   const [brightness, setBrightness] = useState(100);
@@ -58,7 +59,7 @@ export default function FlashlightTool() {
           onClick={() => setOn(true)}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold cursor-pointer"
         >
-          <Maximize2 className="w-4 h-4" /> 전체화면 손전등 켜기
+          <Maximize2 className="w-4 h-4" /> {ui("전체화면 손전등 켜기", "Turn on full-screen flashlight")}
         </button>
 
         <div className="flex items-center gap-1.5">
@@ -71,7 +72,7 @@ export default function FlashlightTool() {
                 mode === m ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'
               }`}
             >
-              {m === 'solid' ? '상시' : m === 'strobe' ? '점멸' : 'SOS'}
+              {m === 'solid' ? ui('상시', "Steady") : m === 'strobe' ? ui('점멸', "Flash") : 'SOS'}
             </button>
           ))}
         </div>
@@ -95,7 +96,7 @@ export default function FlashlightTool() {
       </div>
 
       <label className="block text-xs text-slate-500 max-w-sm">
-        화면 밝기: {brightness}%
+        {ui("화면 밝기:", "Screen brightness:")} {brightness}%
         <input type="range" min={20} max={100} value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full mt-1" />
       </label>
 
@@ -103,12 +104,12 @@ export default function FlashlightTool() {
         className="h-40 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-colors"
         style={{ backgroundColor: color, opacity: brightness / 100 }}
       >
-        <span className="px-3 py-1 rounded-full bg-black/50 text-white text-xs">미리보기</span>
+        <span className="px-3 py-1 rounded-full bg-black/50 text-white text-xs">{ui("미리보기", "Preview")}</span>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-slate-500">
         <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-        웹 브라우저는 화면 조명(Screen Flashlight)과 Wake Lock(화면 꺼짐 방지)을 사용합니다.
+        {ui("웹 브라우저는 화면 조명(Screen Flashlight)과 Wake Lock(화면 꺼짐 방지)을 사용합니다.", "Uses the screen as a light and requests a wake lock to keep it on.")}
       </div>
 
       {on && (
@@ -125,7 +126,7 @@ export default function FlashlightTool() {
             onClick={() => setOn(false)}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-black/70 text-white text-sm font-medium backdrop-blur-sm"
           >
-            <Power className="w-4 h-4" /> 화면을 탭하여 끄기
+            <Power className="w-4 h-4" /> {ui("화면을 탭하여 끄기", "Tap the screen to turn off")}
           </button>
         </div>
       )}
