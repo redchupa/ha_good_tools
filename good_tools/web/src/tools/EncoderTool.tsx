@@ -52,7 +52,7 @@ export default function EncoderTool() {
     if (found === 'jwt') { setJwt(input.trim()); setTab('jwt'); return; }
     setFrom(found);
     if (found === to) setTo('plain');
-    setHint(t(`입력을 "${CODECS.find(c => c.id === found)!.ko}"로 판단했습니다.`, `Detected: ${CODECS.find(c => c.id === found)!.en}.`));
+    setHint(ui(`입력을 "${CODECS.find(c => c.id === found)!.ko}"로 판단했습니다.`, `Detected: ${CODECS.find(c => c.id === found)!.en}.`));
   };
   const setOption = <K extends keyof CodecOptions>(key: K, value: CodecOptions[K]) => setOptions(o => ({ ...o, [key]: value }));
 

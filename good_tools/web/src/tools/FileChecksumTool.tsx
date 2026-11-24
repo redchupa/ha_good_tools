@@ -33,7 +33,7 @@ export default function FileChecksumTool() {
     setProgress(0);
     const worker = new Worker(new URL('../utils/checksum.worker.ts', import.meta.url), { type: 'module' });
     task.current = worker;
-    const fail = () => { stop(); setSourceLabel(t('읽기에 실패했습니다. 파일을 다시 선택해 주세요.','Could not read the file. Choose it again.')); };
+    const fail = () => { stop(); setSourceLabel(ui('읽기에 실패했습니다. 파일을 다시 선택해 주세요.','Could not read the file. Choose it again.')); };
     worker.onerror = fail;
     worker.onmessage = ({ data }) => {
       if (task.current !== worker) return;
@@ -95,7 +95,7 @@ export default function FileChecksumTool() {
         )}
       </div>
 
-      {progress !== null && <div><progress max={100} value={progress} /> {progress}% <button onClick={() => { stop(); setSourceLabel(t('취소됨','Cancelled')); }}>{ui('취소','Cancel')}</button></div>}
+      {progress !== null && <div><progress max={100} value={progress} /> {progress}% <button onClick={() => { stop(); setSourceLabel(ui('취소됨','Cancelled')); }}>{ui('취소','Cancel')}</button></div>}
       {!hashes && sourceLabel && <p role="status">{sourceLabel}</p>}
       {hashes && (
         <div className="space-y-2">
