@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 (2026-11-24)
+
+- **Docker 빌드 오류 수정**: `NODE_ENV=production`을 프론트엔드 빌드 이후로 이동하고 `--include=dev`를 명시하여 `tsc`/`vite` 누락(`exit code 127`) 해결.
+- **Alpine Linux (musl) 호환성 개선**: `.dockerignore` 추가 및 Windows 생성 `package-lock.json` 제외로 컨테이너 내 플랫폼별 네이티브 패키지 해석 안정화.
+
 ## 1.0.0 (2026-11-24)
 
 - **최초 릴리즈**: `wepplication/tools` 기반 32종 온라인 도구를 2026년 최신 웹 스택(React 19, TypeScript, Tailwind CSS v4, Node.js Express)으로 전면 업그레이드하여 Home Assistant 앱(Add-on)으로 출시.

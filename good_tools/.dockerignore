@@ -1,0 +1,5 @@
+**/node_modules
+**/dist
+**/.local_data
+**/package-lock.json
+**/*.tsbuildinfo
