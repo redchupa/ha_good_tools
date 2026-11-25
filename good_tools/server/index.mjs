@@ -16,7 +16,7 @@ export function createApp(options = {}) {
   const allowLanTools =
     options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS === 'true');
   const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
-  const appVersion = options.appVersion || process.env.APP_VERSION || '1.6.2';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.6.3';
 
   const app = express();
   app.disable('x-powered-by');
@@ -36,7 +36,15 @@ export function createApp(options = {}) {
   });
 
   app.use('/api/ha', haRouter());
-  app.use('/api', createApiRouter({ dataDir, allowNetworkTools, allowLanTools, defaultTheme, appVersion }));
+  app.use('/api', createApiRouter({
+    dataDir,
+    allowNetworkTools,
+    allowLanTools,
+    defaultTheme,
+    appVersion,
+    createDnsResolver: options.createDnsResolver,
+    outbound: options.outbound,
+  }));
 
   // Serve static SPA assets (never cache index.html so HA app updates appear immediately)
   if (fs.existsSync(publicDir)) {
