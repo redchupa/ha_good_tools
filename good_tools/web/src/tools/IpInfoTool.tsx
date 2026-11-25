@@ -1,6 +1,6 @@
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
 import { calculateSubnet } from '../utils/helpers';
@@ -9,6 +9,7 @@ export default function IpInfoTool() {
   const ui = useText();
   const [ipData, setIpData] = useState<any>(null);
   const [loadingIp, setLoadingIp] = useState(false);
+  const [ipError, setIpError] = useState('');
   const [domain, setDomain] = useState('home-assistant.io');
   const [dnsRes, setDnsRes] = useState<any>(null);
   const [dnsErr, setDnsErr] = useState('');
@@ -17,18 +18,20 @@ export default function IpInfoTool() {
   const [prefix, setPrefix] = useState(24);
 
   const loadIp = async () => {
+    setIpError('');
     setLoadingIp(true);
     try {
       const r = await fetch('./api/ipinfo');
-      setIpData(await r.json());
+      const data = await r.json();
+      if (!r.ok || !data.publicInfo) throw Error(data.error || ui('공인 IP를 조회하지 못했습니다.', 'Could not look up your public IP.'));
+      setIpData(data);
+    } catch (err) {
+      setIpError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoadingIp(false);
     }
   };
 
-  useEffect(() => {
-    loadIp();
-  }, []);
 
   const lookupDns = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +66,10 @@ export default function IpInfoTool() {
             disabled={loadingIp}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loadingIp ? 'animate-spin' : ''}`} /> {ui("새로고침", "Refresh")}
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingIp ? 'animate-spin' : ''}`} /> {loadingIp ? ui('조회 중…', 'Looking up…') : ui('공인 IP 조회', 'Look up public IP')}
           </button>
         </div>
+        {ipError && <p role="alert"><Diagnostic text={ipError} /></p>}
         {ipData?.publicInfo ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30">
@@ -93,7 +97,7 @@ export default function IpInfoTool() {
             </div>
           </div>
         ) : (
-          <div className="text-xs text-slate-500">{ui("IP 정보를 불러오는 중이거나 네트워크 도구가 비활성화되어 있습니다.", "Loading IP details. Network tools must be enabled.")}</div>
+          <div className="text-xs text-slate-500">{ui('버튼을 누르면 외부 서비스에서 공인 IP를 조회합니다.', 'Use the button to look up your public IP with an external service.')}</div>
         )}
       </section>
 

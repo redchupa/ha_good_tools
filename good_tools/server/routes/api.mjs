@@ -1,5 +1,6 @@
 import express from 'express';
-import dns from 'node:dns/promises';
+import { Resolver } from 'node:dns/promises';
+import { createOutboundPolicy, cachedLookup, OutboundBusy } from '../utils/outbound.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -36,32 +37,6 @@ async function readTextLimited(response, maxBytes = MAX_RESPONSE_BYTES) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function safeFetchPublic(rawUrl, headers = {}, maxHops = 5) {
-  let current = rawUrl.trim();
-  if (!/^https?:\/\//i.test(current)) current = `https://${current}`;
-
-  for (let hop = 0; hop <= maxHops; hop++) {
-    const target = await resolvePublicTarget(current);
-    const response = await requestPublic(target, {
-      method: 'GET',
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      headers: { 'User-Agent': USER_AGENT, ...headers },
-    });
-
-    if (response.status >= 300 && response.status < 400) {
-      const loc = response.headers.get('location');
-      if (!loc) return { response, finalUrl: target.url.toString() };
-      await response.body?.cancel();
-      if (hop === maxHops) throw new Error('리다이렉트 횟수 제한을 초과했습니다.');
-      current = new URL(loc, target.url).toString();
-      continue;
-    }
-
-    return { response, finalUrl: target.url.toString() };
-  }
-  throw new Error('요청을 처리할 수 없습니다.');
-}
-
 function publicLink(value, base) {
   if (!value) return '';
   try {
@@ -74,8 +49,44 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.0' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.1' }) {
   const router = express.Router();
+  const outbound = createOutboundPolicy();
+  const ipLookup = cachedLookup(15 * 60000);
+  const feedLookups = new Map(DEFAULT_FEEDS.map(feed => [feed.url, cachedLookup(10 * 60000)]));
+  const rateLookup = cachedLookup(6 * 3600000);
+
+  // Apply pacing and size limits to every connection, including each redirect hop.
+  async function fetchPublic(raw, headers = {}, { maxHops = 5, maxBytes = MAX_RESPONSE_BYTES, trace = false } = {}) {
+    let url = new URL(/^https?:\/\//i.test(raw.trim()) ? raw.trim() : 'https://' + raw.trim());
+    const seen = new Set();
+    const chain = [];
+    for (let hop = 0; hop <= maxHops; hop++) {
+      url.hash = '';
+      if (seen.has(url.href)) throw Error('반복 리다이렉트 / Redirect loop.');
+      seen.add(url.href);
+      const result = await outbound.run(url.hostname, async observe => {
+        const target = await resolvePublicTarget(url.href);
+        const response = await requestPublic(target, {
+          method: 'GET', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          headers: { 'User-Agent': USER_AGENT, ...headers },
+        });
+        try {
+          observe(response);
+          const location = response.status >= 300 && response.status < 400 && response.headers.get('location');
+          const text = trace || location ? '' : await readTextLimited(response, maxBytes);
+          return { response, location, text };
+        } finally {
+          if (!response.bodyUsed) await response.body?.cancel();
+        }
+      });
+      chain.push({ hop: hop + 1, url: url.href, status: result.response.status, statusText: result.response.statusText });
+      if (!result.location) return { ...result, chain, finalUrl: url.href };
+      if (hop < maxHops) url = new URL(result.location, url);
+    }
+    throw Error('리다이렉트 횟수 제한을 초과했습니다.');
+  }
+
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');
   const prefsFile = path.join(dataDir, 'prefs.json');
@@ -105,7 +116,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
 
   // Per-instance budgets also apply to disconnected callers until their work finishes.
   const lanBudget = { active: 0, max: 4, starts: [], perMinute: 30 };
-  const publicBudget = { active: 0, max: 8, starts: [], perMinute: 90 };
+  const publicBudget = { active: 0, max: 6, starts: [], perMinute: 30 };
   function boundedRoute(budget, fn) {
     return asyncRoute(async (req, res) => {
       const now = Date.now();
@@ -117,6 +128,9 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       budget.starts.push(now);
       try {
         await fn(req, res);
+      } catch (err) {
+        if (!(err instanceof OutboundBusy)) throw err;
+        res.set("Retry-After", String(err.seconds)).status(429).json({ error: err.message });
       } finally {
         budget.active--;
       }
@@ -216,46 +230,15 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     }
 
     try {
-      const chain = [];
-      let currentUrl = url.trim();
-      if (!/^https?:\/\//i.test(currentUrl)) {
-        currentUrl = `https://${currentUrl}`;
-      }
-
-      const maxHops = 10;
-      for (let hop = 0; hop < maxHops; hop++) {
-        const target = await resolvePublicTarget(currentUrl);
-        const response = await requestPublic(target, {
-          method: 'GET',
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-          headers: { 'User-Agent': USER_AGENT },
-        });
-        const location = response.headers.get('location');
-        // Cancel body immediately so we don't download full pages
-        try { await response.body?.cancel(); } catch {}
-
-        chain.push({
-          hop: hop + 1,
-          url: target.url.toString(),
-          status: response.status,
-          statusText: response.statusText,
-        });
-
-        if (response.status >= 300 && response.status < 400 && location) {
-          if (hop + 1 === maxHops) throw new Error('리다이렉트 횟수 제한을 초과했습니다.');
-          currentUrl = new URL(location, target.url).toString();
-        } else {
-          break;
-        }
-      }
-
+      const { chain, finalUrl } = await fetchPublic(url, {}, { trace: true });
       return res.json({
         originalUrl: url.trim(),
-        finalUrl: chain[chain.length - 1]?.url || currentUrl,
+        finalUrl,
         hops: chain.length,
         chain,
       });
     } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
       return res.status(400).json({ error: err.message || 'URL 추적 중 오류가 발생했습니다.' });
     }
   }));
@@ -271,9 +254,9 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     let publicInfo = null;
     const providers = [
       async () => {
-        const { response: r } = await safeFetchPublic('https://ipwho.is/', {}, 0);
-        if (!r.ok) { await r.body?.cancel(); throw new Error('ipwho.is failed'); }
-        const d = JSON.parse(await readTextLimited(r, 65536));
+        const { response: r, text } = await fetchPublic('https://ipwho.is/', {}, { maxHops: 0, maxBytes: 65536 });
+        if (!r.ok) { throw new Error('ipwho.is failed'); }
+        const d = JSON.parse(text);
         if (d.success === false) throw new Error(d.message || 'ipwho.is error');
         return {
           ip: d.ip,
@@ -290,20 +273,23 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
         };
       },
       async () => {
-        const { response: r } = await safeFetchPublic('https://api.ipify.org?format=json', {}, 0);
-        if (!r.ok) { await r.body?.cancel(); throw new Error('ipify failed'); }
-        const d = JSON.parse(await readTextLimited(r, 65536));
+        const { response: r, text } = await fetchPublic('https://api.ipify.org?format=json', {}, { maxHops: 0, maxBytes: 65536 });
+        if (!r.ok) { throw new Error('ipify failed'); }
+        const d = JSON.parse(text);
         return { ip: d.ip, country: '', city: '', isp: '', timezone: '' };
       },
     ];
 
-    for (const provider of providers) {
-      try {
-        publicInfo = await provider();
-        break;
-      } catch {
-        // try next
-      }
+    try {
+      publicInfo = await ipLookup(async () => {
+        for (const provider of providers) {
+          try { return await provider(); }
+          catch (err) { if (err instanceof OutboundBusy) throw err; }
+        }
+        throw Error('IP 조회 실패 / Public IP lookup failed.');
+      });
+    } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
     }
 
     return res.json({
@@ -316,12 +302,18 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
 
   router.get('/exchange-rates', requireNetworkEnabled, boundedRoute(publicBudget, async (_req, res) => {
     try {
-      const { response } = await safeFetchPublic('https://api.frankfurter.dev/v1/latest?base=KRW');
-      if (!response.ok) { await response.body?.cancel(); throw Error(); }
-      const { base, date, rates } = JSON.parse(await readTextLimited(response, 16384));
-      if (base !== 'KRW' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !rates?.USD) throw Error();
-      res.json({ date, rates, source: 'Frankfurter / ECB' });
-    } catch { res.status(502).json({ error: '환율 조회 실패 / Could not refresh rates.' }); }
+      const data = await rateLookup(async () => {
+        const { response, text } = await fetchPublic('https://api.frankfurter.dev/v1/latest?base=KRW', {}, { maxBytes: 16384 });
+        if (!response.ok) throw Error();
+        const { base, date, rates } = JSON.parse(text);
+        if (base !== 'KRW' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !rates?.USD) throw Error();
+        return { date, rates, source: 'Frankfurter / ECB' };
+      });
+      res.json(data);
+    } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
+      res.status(502).json({ error: '환율 조회 실패 / Could not refresh rates.' });
+    }
   }));
 
   // 3. DNS Lookup (ipconfig)
@@ -335,27 +327,24 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       return res.status(400).json({ error: '올바른 도메인 형식이 아닙니다.' });
     }
 
-    const safeResolve = async (fn) => {
+    const records = await outbound.run(cleanDomain, async () => {
+      const resolver = new Resolver({ timeout: 1500, tries: 1 });
+      const result = {};
+      const deadline = Date.now() + 8000;
+      const timer = setTimeout(() => resolver.cancel(), 8000);
       try {
-        return await fn();
-      } catch {
-        return [];
-      }
-    };
-
-    const [a, aaaa, mx, txt, cname, ns] = await Promise.all([
-      safeResolve(() => dns.resolve4(cleanDomain)),
-      safeResolve(() => dns.resolve6(cleanDomain)),
-      safeResolve(() => dns.resolveMx(cleanDomain)),
-      safeResolve(() => dns.resolveTxt(cleanDomain).then((r) => r.map((chunks) => chunks.join('')))),
-      safeResolve(() => dns.resolveCname(cleanDomain)),
-      safeResolve(() => dns.resolveNs(cleanDomain)),
-    ]);
-
-    return res.json({
-      domain: cleanDomain,
-      records: { A: a, AAAA: aaaa, MX: mx, TXT: txt, CNAME: cname, NS: ns },
+        for (const type of ['A', 'AAAA', 'MX', 'TXT', 'CNAME', 'NS']) {
+          result[type] = [];
+          if (Date.now() >= deadline) continue;
+          try {
+            const rows = await resolver.resolve(cleanDomain, type);
+            result[type] = type === 'TXT' ? rows.map(chunks => chunks.join('')) : rows;
+          } catch { /* Some domains do not publish every record type. */ }
+        }
+        return result;
+      } finally { clearTimeout(timer); }
     });
+    res.json({ domain: cleanDomain, records });
   }));
 
   // 4. Remote HTML Source Viewer (htmlViewer)
@@ -366,11 +355,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     }
 
     try {
-      const { response, finalUrl } = await safeFetchPublic(url, {
+      const { response, finalUrl, text: html } = await fetchPublic(url, {
         Accept: 'text/html,application/xhtml+xml,text/plain,*/*',
       });
 
-      const html = await readTextLimited(response, MAX_RESPONSE_BYTES);
       const $ = cheerio.load(html);
       const meta = {
         title: $('title').first().text().trim(),
@@ -396,6 +384,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
         html,
       });
     } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
       return res.status(400).json({ error: err.message || 'HTML을 가져오는 중 오류가 발생했습니다.' });
     }
   }));
@@ -407,20 +396,18 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       return res.status(400).json({ error: 'RSS/Atom 피드 URL을 입력해 주세요.' });
     }
 
-    try {
-      const { response, finalUrl } = await safeFetchPublic(url, {
+    const load = async () => {
+      const { response, finalUrl, text: xml } = await fetchPublic(url, {
         Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
       });
       if (!response.ok) {
-        await response.body?.cancel();
         throw new Error(`피드 서버 응답 오류 (HTTP ${response.status})`);
       }
 
-      const xml = await readTextLimited(response, MAX_RESPONSE_BYTES);
       const feed = await rssParser.parseString(xml);
       const parsedFinal = new URL(finalUrl);
 
-      return res.json({
+      return {
         title: feed.title || parsedFinal.hostname,
         description: feed.description || '',
         link: feed.link || finalUrl,
@@ -432,8 +419,13 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
           snippet: (item.contentSnippet || item.summary || '').slice(0, 400),
           categories: Array.isArray(item.categories) ? item.categories.slice(0, 5) : [],
         })),
-      });
+      };
+    };
+    try {
+      const lookup = feedLookups.get(url.trim());
+      res.json(await (lookup ? lookup(load) : load()));
     } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
       return res.status(400).json({ error: err.message || 'RSS 피드 파싱 중 오류가 발생했습니다.' });
     }
   }));
@@ -466,6 +458,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       });
       return res.status(201).json({ feed: newFeed, feeds });
     } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
       return res.status(400).json({ error: err.message || '피드 저장 실패' });
     }
   }));
@@ -641,9 +634,10 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
   router.post('/ssl-check', requireNetworkEnabled, boundedRoute(publicBudget, async (req, res) => {
     const { host, port = 443 } = req.body || {};
     try {
-      const result = await inspectSsl(host, port);
+      const result = await inspectSsl(host, port, outbound, USER_AGENT);
       res.json(result);
     } catch (err) {
+      if (err instanceof OutboundBusy) throw err;
       res.status(400).json({ error: err.message || 'SSL 진단 중 오류가 발생했습니다.' });
     }
   }));

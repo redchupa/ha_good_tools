@@ -95,7 +95,7 @@ export async function checkTcpPort(host, port, timeoutMs = 2500) {
   });
 }
 
-export async function inspectSsl(rawHost, port = 443) {
+export async function inspectSsl(rawHost, port, outbound, userAgent) {
   const input = String(rawHost || '').trim();
   const authority = net.isIPv6(input) ? '[' + input + ']' : input.replace(/^https?:\/\//i, '');
   const cleanHost = new URL('https://' + authority).hostname;
@@ -104,50 +104,53 @@ export async function inspectSsl(rawHost, port = 443) {
   if (!Number.isInteger(p) || p < 1 || p > 65535) throw new Error('올바른 포트 번호가 아닙니다.');
 
   // Enforce SSRF protection on target host
-  const target = await resolvePublicTarget(`https://${cleanHost}:${p}`);
+  let target;
 
-  const certInfo = await new Promise((resolve, reject) => {
-    const socket = tls.connect(
-      { host: target.address, port: p, servername: net.isIP(cleanHost.replace(/^\[|\]$/g, '')) ? undefined : cleanHost, rejectUnauthorized: false, timeout: 8000 },
-      () => {
-        const cert = socket.getPeerCertificate(false);
-        const authorized = socket.authorized;
-        const authError = socket.authorizationError;
-        const protocol = socket.getProtocol();
-        const cipher = socket.getCipher();
-        socket.destroy();
+  const certInfo = await outbound.run(cleanHost, async () => {
+    target = await resolvePublicTarget(`https://${cleanHost}:${p}`);
+    return new Promise((resolve, reject) => {
+      const socket = tls.connect(
+        { host: target.address, port: p, servername: net.isIP(cleanHost.replace(/^\[|\]$/g, '')) ? undefined : cleanHost, rejectUnauthorized: false, timeout: 8000 },
+        () => {
+          const cert = socket.getPeerCertificate(false);
+          const authorized = socket.authorized;
+          const authError = socket.authorizationError;
+          const protocol = socket.getProtocol();
+          const cipher = socket.getCipher();
+          socket.destroy();
 
-        if (!cert || !Object.keys(cert).length) {
-          return reject(new Error('서버에서 TLS 인증서를 반환하지 않았습니다.'));
+          if (!cert || !Object.keys(cert).length) {
+            return reject(new Error('서버에서 TLS 인증서를 반환하지 않았습니다.'));
+          }
+
+          const validToDate = new Date(cert.valid_to);
+          const daysRemaining = Math.floor((validToDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+          resolve({
+            host: cleanHost,
+            port: p,
+            authorized,
+            authError: authError ? String(authError) : null,
+            protocol,
+            cipher: cipher?.name || '',
+            subject: cert.subject?.CN || '',
+            issuer: cert.issuer?.O || cert.issuer?.CN || '',
+            validFrom: cert.valid_from,
+            validTo: cert.valid_to,
+            daysRemaining,
+            san: cert.subjectaltname || '',
+            fingerprint256: cert.fingerprint256 || '',
+          });
         }
-
-        const validToDate = new Date(cert.valid_to);
-        const daysRemaining = Math.floor((validToDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-
-        resolve({
-          host: cleanHost,
-          port: p,
-          authorized,
-          authError: authError ? String(authError) : null,
-          protocol,
-          cipher: cipher?.name || '',
-          subject: cert.subject?.CN || '',
-          issuer: cert.issuer?.O || cert.issuer?.CN || '',
-          validFrom: cert.valid_from,
-          validTo: cert.valid_to,
-          daysRemaining,
-          san: cert.subjectaltname || '',
-          fingerprint256: cert.fingerprint256 || '',
-        });
-      }
-    );
-    socket.once('timeout', () => {
-      socket.destroy();
-      reject(new Error('TLS 연결 시간이 초과되었습니다.'));
-    });
-    socket.once('error', (err) => {
-      socket.destroy();
-      reject(new Error(err.message || 'TLS 연결 오류'));
+      );
+      socket.once('timeout', () => {
+        socket.destroy();
+        reject(new Error('TLS 연결 시간이 초과되었습니다.'));
+      });
+      socket.once('error', (err) => {
+        socket.destroy();
+        reject(new Error(err.message || 'TLS 연결 오류'));
+      });
     });
   });
 
@@ -155,9 +158,13 @@ export async function inspectSsl(rawHost, port = 443) {
   let securityHeaders = {};
   let httpStatus = null;
   try {
-    const resp = await requestPublic(target, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(6000),
+    const resp = await outbound.run(cleanHost, async observe => {
+      const response = await requestPublic(target, {
+        method: 'HEAD', headers: { 'User-Agent': userAgent },
+        signal: AbortSignal.timeout(6000),
+      });
+      observe(response);
+      return response;
     });
     httpStatus = resp.status;
     for (const h of [

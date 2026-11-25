@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1
+
+- RSS, 공인 IP와 우편번호는 사용자가 조회할 때 연결합니다. 서버는 외부 요청 간격과 동시 연결을 제한하고 429·503 응답의 Retry-After를 존중합니다.
+- Public lookups now run on demand, pace requests, reuse cached results and honor upstream cooldowns.
+
 ## 1.6.0
 
 - 영어 설정을 도구 내부의 입력 안내, 버튼, 결과, 오류 메시지까지 확대했습니다.

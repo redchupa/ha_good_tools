@@ -18,11 +18,13 @@ declare global {
 export default function PostcodeTool() {
   const ui = useText();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [requested, setRequested] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
+    if (!requested) return;
     let active = true;
     const mountWidget = () => {
       if (!active || !window.daum?.Postcode || !containerRef.current) return;
@@ -54,7 +56,7 @@ export default function PostcodeTool() {
       script.onerror = null;
       script.remove();
     };
-  }, []);
+  }, [requested, ui]);
 
   return (
     <div className="space-y-4">
@@ -80,7 +82,11 @@ export default function PostcodeTool() {
         </div>
       )}
 
-      {error ? (
+      {!requested ? (
+        <button type="button" onClick={() => setRequested(true)} className="px-4 py-2 rounded-xl bg-indigo-600 text-white">
+          {ui('주소 검색 열기', 'Open address search')}
+        </button>
+      ) : error ? (
         <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-sm"><Diagnostic text={error} /></div>
       ) : (
         <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white min-h-[460px]">

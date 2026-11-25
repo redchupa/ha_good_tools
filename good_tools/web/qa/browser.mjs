@@ -123,12 +123,17 @@ try {
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   const ids = [...readFileSync('src/App.tsx', 'utf8').matchAll(/'([a-z0-9-]+)': lazy\(/g)].map(match => match[1]);
   assert.ok(ids.length >= 51);
+  const automaticLookups = [];
+  page.on('request', req => {
+    if (/\/api\/(ipinfo|rss|exchange-rates)(\?|$)|kakaocdn\.net\/mapjsapi/.test(req.url())) automaticLookups.push(new URL(req.url()).pathname);
+  });
   for (const id of ids) {
     await open(id);
     await page.locator('main h1').last().waitFor();
     await page.getByText('Loading tool...', {exact:true}).waitFor({state:'hidden'});
     assert.equal(await page.getByText('This tool encountered an unexpected error.').count(), 0, id);
   }
+  assert.deepEqual(automaticLookups, [], 'Opening tools must not trigger upstream lookups');
   console.log('PASS: opened ' + ids.length + ' tools in English');
   await open('unit-date-calc');
   await page.getByText('Everyday unit conversions').waitFor();
