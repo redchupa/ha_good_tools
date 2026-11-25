@@ -36,7 +36,7 @@ export default function RssReaderTool() {
   };
 
   const fetchFeed = async (targetUrl: string) => {
-    if (!targetUrl.trim()) return;
+    if (loading || !targetUrl.trim()) return;
     setUrl(targetUrl);
     setLoading(true);
     setError('');
@@ -58,7 +58,6 @@ export default function RssReaderTool() {
 
   useEffect(() => {
     loadSavedFeeds();
-    fetchFeed('https://www.home-assistant.io/atom.xml');
   }, []);
 
   const addFeed = async () => {
@@ -90,7 +89,7 @@ export default function RssReaderTool() {
             key={f.id}
             className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"
           >
-            <button type="button" onClick={() => fetchFeed(f.url)} className="font-medium hover:text-indigo-500 cursor-pointer">
+            <button type="button" disabled={loading} onClick={() => fetchFeed(f.url)} className="font-medium hover:text-indigo-500 cursor-pointer">
               {f.name}
             </button>
             <button
