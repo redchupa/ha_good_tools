@@ -122,7 +122,9 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       const now = Date.now();
       budget.starts = budget.starts.filter(start => now - start < 60000);
       if (budget.active >= budget.max || budget.starts.length >= budget.perMinute) {
-        return res.status(429).json({ error: '요청이 많습니다. 잠시 후 다시 시도해 주세요.' });
+        const seconds = budget.starts.length >= budget.perMinute
+          ? Math.max(1, Math.ceil((budget.starts[0] + 60000 - now) / 1000)) : 10;
+        return res.set('Retry-After', String(seconds)).status(429).json({ error: '요청이 많습니다. 잠시 후 다시 시도해 주세요.' });
       }
       budget.active++;
       budget.starts.push(now);

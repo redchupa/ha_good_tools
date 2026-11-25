@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { useState } from 'react';
@@ -12,6 +13,7 @@ export default function IpInfoTool() {
   const [ipError, setIpError] = useState('');
   const [domain, setDomain] = useState('home-assistant.io');
   const [dnsRes, setDnsRes] = useState<any>(null);
+  const [loadingDns, setLoadingDns] = useState(false);
   const [dnsErr, setDnsErr] = useState('');
 
   const [subIp, setSubIp] = useState('192.168.1.129');
@@ -22,6 +24,7 @@ export default function IpInfoTool() {
     setLoadingIp(true);
     try {
       const r = await fetch('./api/ipinfo');
+      checkLookupLimit(r, ui);
       const data = await r.json();
       if (!r.ok || !data.publicInfo) throw Error(data.error || ui('공인 IP를 조회하지 못했습니다.', 'Could not look up your public IP.'));
       setIpData(data);
@@ -36,14 +39,22 @@ export default function IpInfoTool() {
   const lookupDns = async (e: React.FormEvent) => {
     e.preventDefault();
     setDnsErr('');
-    const r = await fetch('./api/dns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain }),
-    });
-    const d = await r.json();
-    if (!r.ok) setDnsErr(d.error || ui('DNS 조회 실패', "DNS lookup failed"));
-    else setDnsRes(d);
+    setLoadingDns(true);
+    try {
+      const r = await fetch('./api/dns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+      });
+      checkLookupLimit(r, ui);
+      const d = await r.json();
+      if (!r.ok) setDnsErr(d.error || ui('DNS 조회 실패', "DNS lookup failed"));
+      else setDnsRes(d);
+    } catch (err) {
+      setDnsErr(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoadingDns(false);
+    }
   };
 
   let subnet: ReturnType<typeof calculateSubnet> | null = null;
@@ -69,6 +80,7 @@ export default function IpInfoTool() {
             <RefreshCw className={`w-3.5 h-3.5 ${loadingIp ? 'animate-spin' : ''}`} /> {loadingIp ? ui('조회 중…', 'Looking up…') : ui('공인 IP 조회', 'Look up public IP')}
           </button>
         </div>
+        <LookupNotice pending={loadingIp} cache={ui("공인 IP 정보는 최대 15분 동안 저장된 값을 사용합니다.", "Public IP details are cached for up to 15 minutes.")} />
         {ipError && <p role="alert"><Diagnostic text={ipError} /></p>}
         {ipData?.publicInfo ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -104,6 +116,7 @@ export default function IpInfoTool() {
       {/* DNS Lookup */}
       <section className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
         <h2 className="text-sm font-semibold">{ui("DNS 레코드 조회", "DNS record lookup")}</h2>
+        <LookupNotice pending={loadingDns} />
         <form onSubmit={lookupDns} className="flex gap-2">
           <input
             value={domain}
@@ -111,7 +124,7 @@ export default function IpInfoTool() {
             placeholder={ui("도메인 입력 (예: google.com)", "Enter a domain (e.g. google.com)")}
             className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono"
           />
-          <button type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium cursor-pointer">
+          <button disabled={loadingDns} type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium cursor-pointer">
             <Search className="w-4 h-4" /> {ui("조회", "Look up")}
           </button>
         </form>

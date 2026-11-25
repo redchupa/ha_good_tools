@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { useState } from 'react';
@@ -30,6 +31,7 @@ export default function LongUrlTool() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       });
+      checkLookupLimit(res, ui);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || ui('추적 실패', "Trace failed"));
       setResult(data);
@@ -42,6 +44,7 @@ export default function LongUrlTool() {
 
   return (
     <div className="space-y-4">
+      <LookupNotice pending={loading} />
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           value={url}
