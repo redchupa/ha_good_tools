@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useMemo, useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
@@ -7,6 +8,7 @@ const CONTROL_NAMES = [
 ];
 
 export default function AsciiCodesTool() {
+  const ui = useText();
   const [filter, setFilter] = useState<'all' | 'printable' | 'control'>('printable');
   const [search, setSearch] = useState('');
   const [sampleText, setSampleText] = useState('Hello HA!');
@@ -38,7 +40,7 @@ export default function AsciiCodesTool() {
   return (
     <div className="space-y-5">
       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
-        <div className="text-xs font-semibold text-slate-500">문자열 → ASCII 코드 즉시 변환</div>
+        <div className="text-xs font-semibold text-slate-500">{ui("문자열 → ASCII 코드 즉시 변환", "Text to ASCII codes")}</div>
         <input
           value={sampleText}
           onChange={(e) => setSampleText(e.target.value)}
@@ -66,13 +68,13 @@ export default function AsciiCodesTool() {
               filter === f ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800'
             }`}
           >
-            {f === 'printable' ? '출력 문자 (32~126)' : f === 'control' ? '제어 문자 (0~31, 127)' : '전체 (0~127)'}
+            {f === 'printable' ? ui('출력 문자 (32~126)', "Printable (32–126)") : f === 'control' ? ui('제어 문자 (0~31, 127)', "Control (0–31, 127)") : ui('전체 (0~127)', "All (0–127)")}
           </button>
         ))}
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="문자, DEC, HEX 검색..."
+          placeholder={ui("문자, DEC, HEX 검색...", "Search by character, decimal or hex...")}
           className="ml-auto px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
         />
       </div>

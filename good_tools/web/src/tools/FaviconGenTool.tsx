@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
 import { Upload, Download } from 'lucide-react';
 
@@ -9,6 +10,7 @@ const SIZES = [
 ];
 
 export default function FaviconGenTool() {
+  const ui = useText();
   const [srcUrl, setSrcUrl] = useState('');
   const [svgCode, setSvgCode] = useState(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#4f46e5"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-size="64" font-family="sans-serif" font-weight="bold">G</text></svg>`
@@ -41,7 +43,7 @@ export default function FaviconGenTool() {
         <div className="space-y-3">
           <label className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 cursor-pointer bg-slate-50 dark:bg-slate-800/40 text-xs font-medium">
             <Upload className="w-4 h-4 text-indigo-500" />
-            이미지 파일 업로드 (PNG/JPG/SVG)
+            {ui("이미지 파일 업로드 (PNG/JPG/SVG)", "Upload image (PNG/JPG/SVG)")}
             <input
               type="file"
               accept="image/*"
@@ -51,7 +53,7 @@ export default function FaviconGenTool() {
               }}
             />
           </label>
-          <div className="text-xs font-semibold text-slate-500">또는 SVG 코드 직접 편집</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("또는 SVG 코드 직접 편집", "Or edit SVG code")}</div>
           <textarea
             rows={6}
             value={svgCode}

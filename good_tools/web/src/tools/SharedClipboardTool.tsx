@@ -1,3 +1,4 @@
+import { Diagnostic } from '../components/Diagnostic';
 import { useHaCapabilities } from '../components/HaIntegration';
 import { useText } from '../hooks/language';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -172,7 +173,7 @@ export default function SharedClipboardTool() {
       {message && (
         <div role={message.kind === 'error' ? 'alert' : 'status'}
           className={`flex items-start gap-2 text-xs p-3 rounded-lg ${message.kind === 'error' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>
-          <span className="flex-1">{message.text}</span>
+          <span className="flex-1"><Diagnostic text={message.text} /></span>
           <button type="button" onClick={() => setMessage(null)} aria-label={t('닫기', 'Close')} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}

@@ -108,6 +108,33 @@ try {
   await page.goto(base);await page.getByText('최근 사용한 도구').waitFor();
   await page.keyboard.press('Control+k');
   await page.locator('input[placeholder*=키워드]').waitFor();
+  await page.keyboard.press('Escape');
+  await page.unrouteAll({ behavior: 'wait' });
+  await open('csv-json');
+  const csv = page.locator('textarea').first();
+  await csv.fill('이름,room\n거실,kitchen');
+  await page.getByTitle('언어 전환 (한국어 / English)').click();
+  await page.getByText('CSV / TSV input (paste from a spreadsheet)').waitFor();
+  assert.equal(await csv.inputValue(), '이름,room\n거실,kitchen');
+  await csv.fill('a,a\n1,2');
+  await page.getByText('Column names must be unique.').waitFor();
+  await page.reload();
+  await page.getByTitle('Switch language (English / Korean)').waitFor();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  const ids = [...readFileSync('src/App.tsx', 'utf8').matchAll(/'([a-z0-9-]+)': lazy\(/g)].map(match => match[1]);
+  assert.ok(ids.length >= 51);
+  for (const id of ids) {
+    await open(id);
+    await page.locator('main h1').last().waitFor();
+    await page.getByText('Loading tool...', {exact:true}).waitFor({state:'hidden'});
+    assert.equal(await page.getByText('This tool encountered an unexpected error.').count(), 0, id);
+  }
+  console.log('PASS: opened ' + ids.length + ' tools in English');
+  await open('unit-date-calc');
+  await page.getByText('Everyday unit conversions').waitFor();
+  await page.getByTitle('Switch language (English / Korean)').click();
+  await page.getByText('생활 단위 빠른 변환').waitFor();
+  console.log('PASS: language switch, user input preservation, English CSV errors, persistence and switching back');
   assert.deepEqual(errors,[]);
   console.log('PASS: bundle budget, delayed preferences, mobile file hash/cancel/re-pick, PDF extraction, file converter (PDF→PNG, ZIP, PNG→JPG), encoder (hex, gzip detect), '
     + (lanBase ? 'HTTP crypto round trip and availability chips, ' : 'HTTP checks skipped (no LAN address), ') + 'reduced motion, recent tools, keyboard input');

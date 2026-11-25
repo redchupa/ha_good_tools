@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
 import { ArrowLeftRight, RotateCcw, Edit3 } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
@@ -12,27 +13,29 @@ interface CurrencyDef {
 }
 
 // 예시 기본 환율 (실제 환율로 사용자가 자유롭게 수정 가능)
-const DEFAULT_CURRENCIES: CurrencyDef[] = [
-  { code: 'KRW', name: '대한민국 원', symbol: '₩', flag: '🇰🇷', unit: 1, defaultKrwPerUnit: 1 },
-  { code: 'USD', name: '미국 달러', symbol: '$', flag: '🇺🇸', unit: 1, defaultKrwPerUnit: 1415 },
-  { code: 'JPY', name: '일본 엔 (100엔)', symbol: '¥', flag: '🇯🇵', unit: 100, defaultKrwPerUnit: 875 },
-  { code: 'EUR', name: '유럽 유로', symbol: '€', flag: '🇪🇺', unit: 1, defaultKrwPerUnit: 1495 },
-  { code: 'CNY', name: '중국 위안', symbol: '¥', flag: '🇨🇳', unit: 1, defaultKrwPerUnit: 204 },
-  { code: 'GBP', name: '영국 파운드', symbol: '£', flag: '🇬🇧', unit: 1, defaultKrwPerUnit: 1780 },
-  { code: 'AUD', name: '호주 달러', symbol: 'A$', flag: '🇦🇺', unit: 1, defaultKrwPerUnit: 920 },
-  { code: 'CAD', name: '캐나다 달러', symbol: 'C$', flag: '🇨🇦', unit: 1, defaultKrwPerUnit: 1015 },
-  { code: 'SGD', name: '싱가포르 달러', symbol: 'S$', flag: '🇸🇬', unit: 1, defaultKrwPerUnit: 1055 },
-  { code: 'HKD', name: '홍콩 달러', symbol: 'HK$', flag: '🇭🇰', unit: 1, defaultKrwPerUnit: 182 },
-  { code: 'TWD', name: '대만 달러', symbol: 'NT$', flag: '🇹🇼', unit: 1, defaultKrwPerUnit: 43.5 },
-  { code: 'THB', name: '태국 바트', symbol: '฿', flag: '🇹🇭', unit: 1, defaultKrwPerUnit: 41.5 },
-  { code: 'VND', name: '베트남 동 (100동)', symbol: '₫', flag: '🇻🇳', unit: 100, defaultKrwPerUnit: 5.6 },
-  { code: 'PHP', name: '필리핀 페소', symbol: '₱', flag: '🇵🇭', unit: 1, defaultKrwPerUnit: 24.5 },
-  { code: 'CHF', name: '스위스 프랑', symbol: 'CHF', flag: '🇨🇭', unit: 1, defaultKrwPerUnit: 1590 },
-];
+
 
 const LS_KEY = 'good_tools_currency_rates_2026';
 
 export default function CurrencyCalcTool() {
+  const ui = useText();
+  const DEFAULT_CURRENCIES: CurrencyDef[] = [
+    { code: 'KRW', name: ui('대한민국 원', "South Korean won"), symbol: '₩', flag: '🇰🇷', unit: 1, defaultKrwPerUnit: 1 },
+    { code: 'USD', name: ui('미국 달러', "US dollar"), symbol: '$', flag: '🇺🇸', unit: 1, defaultKrwPerUnit: 1415 },
+    { code: 'JPY', name: ui('일본 엔 (100엔)', "Japanese yen (100 JPY)"), symbol: '¥', flag: '🇯🇵', unit: 100, defaultKrwPerUnit: 875 },
+    { code: 'EUR', name: ui('유럽 유로', "Euro"), symbol: '€', flag: '🇪🇺', unit: 1, defaultKrwPerUnit: 1495 },
+    { code: 'CNY', name: ui('중국 위안', "Chinese yuan"), symbol: '¥', flag: '🇨🇳', unit: 1, defaultKrwPerUnit: 204 },
+    { code: 'GBP', name: ui('영국 파운드', "British pound"), symbol: '£', flag: '🇬🇧', unit: 1, defaultKrwPerUnit: 1780 },
+    { code: 'AUD', name: ui('호주 달러', "Australian dollar"), symbol: 'A$', flag: '🇦🇺', unit: 1, defaultKrwPerUnit: 920 },
+    { code: 'CAD', name: ui('캐나다 달러', "Canadian dollar"), symbol: 'C$', flag: '🇨🇦', unit: 1, defaultKrwPerUnit: 1015 },
+    { code: 'SGD', name: ui('싱가포르 달러', "Singapore dollar"), symbol: 'S$', flag: '🇸🇬', unit: 1, defaultKrwPerUnit: 1055 },
+    { code: 'HKD', name: ui('홍콩 달러', "Hong Kong dollar"), symbol: 'HK$', flag: '🇭🇰', unit: 1, defaultKrwPerUnit: 182 },
+    { code: 'TWD', name: ui('대만 달러', "Taiwan dollar"), symbol: 'NT$', flag: '🇹🇼', unit: 1, defaultKrwPerUnit: 43.5 },
+    { code: 'THB', name: ui('태국 바트', "Thai baht"), symbol: '฿', flag: '🇹🇭', unit: 1, defaultKrwPerUnit: 41.5 },
+    { code: 'VND', name: ui('베트남 동 (100동)', "Vietnamese dong (100 VND)"), symbol: '₫', flag: '🇻🇳', unit: 100, defaultKrwPerUnit: 5.6 },
+    { code: 'PHP', name: ui('필리핀 페소', "Philippine peso"), symbol: '₱', flag: '🇵🇭', unit: 1, defaultKrwPerUnit: 24.5 },
+    { code: 'CHF', name: ui('스위스 프랑', "Swiss franc"), symbol: 'CHF', flag: '🇨🇭', unit: 1, defaultKrwPerUnit: 1590 },
+  ];
   const [rates, setRates] = useState<Record<string, number>>(() => {
     const base = Object.fromEntries(DEFAULT_CURRENCIES.map((c) => [c.code, c.defaultKrwPerUnit]));
     try {
@@ -69,19 +72,19 @@ export default function CurrencyCalcTool() {
       const missing = DEFAULT_CURRENCIES.filter(c => c.code !== 'KRW' && !(c.code in values)).map(c => c.code);
       const total = DEFAULT_CURRENCIES.length - 1;
       setStatus(missing.length
-        ? `${total - missing.length}/${total}개 갱신 (${feed.date}) · ${missing.join('·')}는 출처에 없어 직접 입력해 주세요 / ${missing.join(', ')} not in the feed`
-        : `${total}개 모두 갱신 (${feed.date}) / All updated`);
-    } catch { setStatus('갱신 실패 · 저장된 환율 사용 / Using cached rates'); }
+        ? ui(`${total - missing.length}/${total}개 갱신 (${feed.date}) · ${missing.join('·')}는 출처에 없어 직접 입력해 주세요 / ${missing.join(', ')} not in the feed`, `Updated ${total - missing.length}/${total} (${feed.date}). Enter rates for ${missing.join(", ")} manually.`)
+        : ui(`${total}개 모두 갱신 (${feed.date}) / All updated`, `Updated all ${total} rates (${feed.date})`));
+    } catch { setStatus(ui('갱신 실패 · 저장된 환율 사용 / Using cached rates', "Refresh failed. Using cached rates.")); }
     finally { setLoading(false); }
   };
   const edit = (code:string, value:string) => {
     const n = Number(value);
     if (n > 0 && Number.isFinite(n)) {
       setRates(prev=>({...prev,[code]:n}));
-      setSources(prev=>({...prev,[code]:'사용자 입력 / Manual · ' + new Date().toLocaleDateString()}));
+      setSources(prev=>({...prev,[code]:ui('사용자 입력 / Manual · ', "Manual · ") + new Date().toLocaleDateString()}));
     }
   };
-  const describe = (code:string) => sources[code] || (rates[code] === DEFAULT_CURRENCIES.find(c=>c.code===code)?.defaultKrwPerUnit ? '예시 / Example' : '저장값 / Saved');
+  const describe = (code:string) => sources[code] || (rates[code] === DEFAULT_CURRENCIES.find(c=>c.code===code)?.defaultKrwPerUnit ? ui('예시 / Example', "Example") : ui('저장값 / Saved', "Saved"));
   const [fromCode, setFromCode] = useState('USD');
   const [toCode, setToCode] = useState('KRW');
   const [amount, setAmount] = useState('100');
@@ -117,12 +120,12 @@ export default function CurrencyCalcTool() {
   };
 
   const fmt = (val: number, code: string) =>
-    val.toLocaleString('ko-KR', { maximumFractionDigits: code === 'KRW' || code === 'JPY' || code === 'VND' ? 0 : 2 });
+    val.toLocaleString(ui('ko-KR', 'en-US'), { maximumFractionDigits: code === 'KRW' || code === 'JPY' || code === 'VND' ? 0 : 2 });
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-        <span>기본값은 예시 환율 기준이며, 실제 환율을 직접 수정해 계산할 수 있습니다.</span>
+        <span>{ui("기본값은 예시 환율 기준이며, 실제 환율을 직접 수정해 계산할 수 있습니다.", "The default rates are examples. Enter current rates to update the calculation.")}</span>
         <div className="flex gap-2">
           <button
             type="button"
@@ -133,25 +136,25 @@ export default function CurrencyCalcTool() {
                 : 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Edit3 className="w-3.5 h-3.5" /> {editRates ? '환율 편집 닫기' : '환율 직접 수정'}
+            <Edit3 className="w-3.5 h-3.5" /> {editRates ? ui('환율 편집 닫기', "Close rate editor") : ui('환율 직접 수정', "Edit exchange rates")}
           </button>
           <button
             type="button"
             onClick={resetDefaults}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> 예시값 복원
+            <RotateCcw className="w-3.5 h-3.5" /> {ui("예시값 복원", "Restore example rates")}
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm"><button disabled={loading} onClick={refresh}>기준 환율 갱신 / Refresh</button>
+      <div className="flex flex-wrap gap-3 text-sm"><button disabled={loading} onClick={refresh}>{ui("기준 환율 갱신 / Refresh", "Refresh rates")}</button>
         <span>{fromCode} · {describe(fromCode)} / {toCode} · {describe(toCode)}</span><span role="status">{status}</span></div>
       {/* Main 1:1 Converter */}
       <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-end">
           <div className="space-y-1.5">
-            <label className="text-xs text-slate-500">보내는 통화</label>
+            <label className="text-xs text-slate-500">{ui("보내는 통화", "From currency")}</label>
             <div className="flex gap-2">
               <select
                 value={fromCode}
@@ -177,13 +180,13 @@ export default function CurrencyCalcTool() {
             type="button"
             onClick={swap}
             className="h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 flex items-center justify-center cursor-pointer"
-            title="통화 바꾸기"
+            title={ui("통화 바꾸기", "Swap currencies")}
           >
             <ArrowLeftRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           </button>
 
           <div className="space-y-1.5">
-            <label className="text-xs text-slate-500">변환 결과</label>
+            <label className="text-xs text-slate-500">{ui("변환 결과", "Result")}</label>
             <div className="flex gap-2">
               <select
                 value={toCode}
@@ -210,7 +213,7 @@ export default function CurrencyCalcTool() {
         {fromCode !== 'KRW' && (
           <div className="flex flex-wrap items-center gap-2 text-xs pt-2 border-t border-slate-200 dark:border-slate-700">
             <span className="text-slate-500">
-              적용 환율 ({fromDef.unit} {fromCode} 기준 원화):
+              {ui("적용 환율 (", "Exchange rate (")}{fromDef.unit} {fromCode} {ui("기준 원화):", " in KRW):")}
             </span>
             <input
               type="number"
@@ -219,7 +222,7 @@ export default function CurrencyCalcTool() {
               onChange={(e) => edit(fromCode,e.target.value)}
               className="w-28 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-semibold"
             />
-            <span>원</span>
+            <span>{ui("원", " KRW")}</span>
           </div>
         )}
       </div>
@@ -228,13 +231,13 @@ export default function CurrencyCalcTool() {
       {editRates && (
         <div className="p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/30 dark:bg-indigo-500/5 space-y-3">
           <div className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-            통화별 기준 환율 직접 편집 (원화 KRW 기준)
+            {ui("통화별 기준 환율 직접 편집 (원화 KRW 기준)", "Edit exchange rates in Korean won (KRW)")}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {DEFAULT_CURRENCIES.filter((c) => c.code !== 'KRW').map((c) => (
               <label key={c.code} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
                 <span>
-                  {c.flag} <strong>{c.code}</strong> ({c.unit}단위)
+                  {c.flag} <strong>{c.code}</strong> ({c.unit}{ui("단위)", " units)")}
                 </span>
                 <div className="flex items-center gap-1">
                   <input
@@ -246,7 +249,7 @@ export default function CurrencyCalcTool() {
                     }
                     className="w-24 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-right"
                   />
-                  <span className="text-slate-400">원</span>
+                  <span className="text-slate-400">{ui("원", " KRW")}</span>
                 </div>
               </label>
             ))}
@@ -257,7 +260,7 @@ export default function CurrencyCalcTool() {
       {/* Multi-currency comparison grid */}
       <div className="space-y-2">
         <div className="text-xs font-semibold text-slate-500">
-          전체 주요 국가 동시 환산 ({fromDef.flag} {fmt(numAmount, fromCode)} {fromCode} 기준)
+          {ui("전체 주요 국가 동시 환산 (", "Compare currencies (")}{fromDef.flag} {fmt(numAmount, fromCode)} {fromCode} {ui("기준)", " base)")}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {DEFAULT_CURRENCIES.map((c) => {
@@ -277,7 +280,7 @@ export default function CurrencyCalcTool() {
                   <span>{c.flag} {c.code}</span>
                   {c.code !== 'KRW' && (
                     <span className="text-[10px] font-mono opacity-75">
-                      {rates[c.code]}원/{c.unit}
+                      {rates[c.code]}{ui("원/", " KRW/")}{c.unit}
                     </span>
                   )}
                 </div>

@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useEffect, useState, useRef } from 'react';
 import { RefreshCw, Play, Users } from 'lucide-react';
 
@@ -49,12 +50,13 @@ function buildLadder(n: number, k: number): LadderState {
 }
 
 export default function GameLadderTool() {
+  const ui = useText();
   const [n, setN] = useState(4);
   const [k, setK] = useState(1);
-  const [winLabel, setWinLabel] = useState('커피 당첨');
-  const [names, setNames] = useState<string[]>(['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번']);
+  const [winLabel, setWinLabel] = useState(ui('커피 당첨', "Buy coffee"));
+  const [names, setNames] = useState<string[]>([ui('1번', "1"), ui('2번', "2"), ui('3번', "3"), ui('4번', "4"), ui('5번', "5"), ui('6번', "6"), ui('7번', "7"), ui('8번', "8")]);
   const [ladder, setLadder] = useState<LadderState | null>(null);
-  const [summary, setSummary] = useState('위쪽 번호를 누르면 사다리를 따라 내려갑니다');
+  const [summary, setSummary] = useState(ui('위쪽 번호를 누르면 사다리를 따라 내려갑니다', "Choose a number at the top to follow its path."));
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearTimers = () => {
@@ -67,7 +69,7 @@ export default function GameLadderTool() {
   const makeNew = (nextN = n, nextK = k) => {
     clearTimers();
     setLadder(buildLadder(nextN, Math.min(nextK, nextN - 1)));
-    setSummary('위쪽 번호를 누르면 사다리를 따라 내려갑니다');
+    setSummary(ui('위쪽 번호를 누르면 사다리를 따라 내려갑니다', "Choose a number at the top to follow its path."));
   };
 
   const getCoords = (L: LadderState) => {
@@ -106,11 +108,11 @@ export default function GameLadderTool() {
 
       if (nextDone.length === prev.n) {
         const winners = prev.results
-          .map((w, col) => (w ? names[nextRevealed[col]] || `${nextRevealed[col] + 1}번` : ''))
+          .map((w, col) => (w ? names[nextRevealed[col]] || ui(`${nextRevealed[col] + 1}번`, `${nextRevealed[col] + 1}`) : ''))
           .filter(Boolean);
-        setSummary(`최종 결과 (${winLabel}): ${winners.join(', ')}`);
+        setSummary(ui(`최종 결과 (${winLabel}): ${winners.join(', ')}`, `Result (${winLabel}): ${winners.join(", ")}`));
       } else {
-        setSummary(`${names[startIdx] || `${startIdx + 1}번`} → ${isWin ? winLabel + '!' : '통과'}`);
+        setSummary(`${names[startIdx] || ui(`${startIdx + 1}번`, `${startIdx + 1}`)} → ${isWin ? winLabel + '!' : ui('통과', "Pass")}`);
       }
 
       return {
@@ -149,8 +151,8 @@ export default function GameLadderTool() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <div className="font-semibold text-sm">참가 인원</div>
-              <div className="text-xs text-slate-500">2명 ~ 8명</div>
+              <div className="font-semibold text-sm">{ui("참가 인원", "Players")}</div>
+              <div className="text-xs text-slate-500">{ui("2명 ~ 8명", "2 to 8 players")}</div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -177,8 +179,8 @@ export default function GameLadderTool() {
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <div className="font-semibold text-sm">당첨 인원</div>
-              <div className="text-xs text-slate-500">벌칙/커피 쏘는 사람</div>
+              <div className="font-semibold text-sm">{ui("당첨 인원", "Number of winners")}</div>
+              <div className="text-xs text-slate-500">{ui("벌칙/커피 쏘는 사람", "Players assigned the outcome")}</div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -201,7 +203,7 @@ export default function GameLadderTool() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500">당첨 항목 이름</label>
+          <label className="text-xs font-semibold text-slate-500">{ui("당첨 항목 이름", "Outcome label")}</label>
           <input
             value={winLabel}
             onChange={(e) => setWinLabel(e.target.value)}
@@ -210,7 +212,7 @@ export default function GameLadderTool() {
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-slate-500">참가자 이름 (선택 수정)</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("참가자 이름 (선택 수정)", "Player names (optional)")}</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {Array.from({ length: n }, (_, i) => (
               <input
@@ -232,7 +234,7 @@ export default function GameLadderTool() {
           onClick={() => makeNew(n, k)}
           className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer"
         >
-          <Play className="w-4 h-4" /> 사다리 만들기
+          <Play className="w-4 h-4" /> {ui("사다리 만들기", "Create ladder")}
         </button>
       </div>
     );
@@ -328,7 +330,7 @@ export default function GameLadderTool() {
                   fontSize={16}
                   fontWeight="bold"
                 >
-                  {shown ? (win ? winLabel.slice(0, 5) : '통과') : '?'}
+                  {shown ? (win ? winLabel.slice(0, 5) : ui('통과', "Pass")) : '?'}
                 </text>
               </g>
             );
@@ -342,14 +344,14 @@ export default function GameLadderTool() {
           onClick={revealAll}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium cursor-pointer"
         >
-          <Play className="w-4 h-4" /> 모두 공개
+          <Play className="w-4 h-4" /> {ui("모두 공개", "Reveal all")}
         </button>
         <button
           type="button"
           onClick={() => makeNew()}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4" /> 새 사다리
+          <RefreshCw className="w-4 h-4" /> {ui("새 사다리", "New ladder")}
         </button>
         <button
           type="button"
@@ -359,7 +361,7 @@ export default function GameLadderTool() {
           }}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
         >
-          <Users className="w-4 h-4" /> 인원·이름 바꾸기
+          <Users className="w-4 h-4" /> {ui("인원·이름 바꾸기", "Edit players")}
         </button>
       </div>
     </div>

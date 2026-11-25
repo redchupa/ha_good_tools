@@ -1,3 +1,4 @@
+import { Diagnostic } from './Diagnostic';
 import { useEffect, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { openPdf, renderPdfPage } from '../utils/pdfRender';
@@ -38,7 +39,7 @@ export function PdfPagePreview({ file, page }: { file: File; page: number }) {
     return () => { active = false; if (url) URL.revokeObjectURL(url); };
   }, [doc, page]);
 
-  if (error) return <p role="alert" className="text-xs text-rose-500">{error}</p>;
+  if (error) return <p role="alert" className="text-xs text-rose-500"><Diagnostic text={error} /></p>;
   if (!image) return <p className="text-xs text-slate-400 animate-pulse">{t('미리보기를 만드는 중…', 'Rendering preview…')}</p>;
   return <img src={image} alt={t(`${page}페이지 미리보기`, `Page ${page} preview`)} className="max-h-80 mx-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-white" />;
 }

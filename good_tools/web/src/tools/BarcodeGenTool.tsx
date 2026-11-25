@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { downloadBlob } from '../utils/download';
 import { useEffect, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
@@ -5,6 +6,7 @@ import QRCode from 'qrcode';
 import { Download } from 'lucide-react';
 
 export default function BarcodeGenTool() {
+  const ui = useText();
   const [tab, setTab] = useState<'qr' | 'barcode'>('qr');
   const [qrMode, setQrMode] = useState<'text' | 'wifi'>('text');
   const [qrText, setQrText] = useState('https://www.home-assistant.io');
@@ -46,7 +48,7 @@ export default function BarcodeGenTool() {
       });
       setBcError('');
     } catch (err) {
-      setBcError(err instanceof Error ? err.message : '해당 바코드 형식에 맞지 않는 값입니다.');
+      setBcError(err instanceof Error ? err.message : ui('해당 바코드 형식에 맞지 않는 값입니다.', "The value is invalid for this barcode format."));
     }
   }, [tab, bcValue, bcFormat]);
 
@@ -67,7 +69,7 @@ export default function BarcodeGenTool() {
             tab === 'qr' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
           }`}
         >
-          QR 코드 생성
+          {ui("QR 코드 생성", "Generate QR code")}
         </button>
         <button
           type="button"
@@ -76,7 +78,7 @@ export default function BarcodeGenTool() {
             tab === 'barcode' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
           }`}
         >
-          1D 바코드 생성
+          {ui("1D 바코드 생성", "Generate barcode")}
         </button>
       </div>
 
@@ -91,7 +93,7 @@ export default function BarcodeGenTool() {
                   qrMode === 'text' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'
                 }`}
               >
-                URL / 텍스트
+                {ui("URL / 텍스트", "URL / text")}
               </button>
               <button
                 type="button"
@@ -100,7 +102,7 @@ export default function BarcodeGenTool() {
                   qrMode === 'wifi' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800'
                 }`}
               >
-                Wi-Fi 자동 연결 QR
+                {ui("Wi-Fi 자동 연결 QR", "Wi-Fi connection QR")}
               </button>
             </div>
 
@@ -109,7 +111,7 @@ export default function BarcodeGenTool() {
                 rows={4}
                 value={qrText}
                 onChange={(e) => setQrText(e.target.value)}
-                placeholder="URL 또는 텍스트를 입력하세요..."
+                placeholder={ui("URL 또는 텍스트를 입력하세요...", "Enter a URL or text...")}
                 className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:border-indigo-500"
               />
             ) : (
@@ -117,13 +119,13 @@ export default function BarcodeGenTool() {
                 <input
                   value={wifiSsid}
                   onChange={(e) => setWifiSsid(e.target.value)}
-                  placeholder="Wi-Fi 이름 (SSID)"
+                  placeholder={ui("Wi-Fi 이름 (SSID)", "Wi-Fi network (SSID)")}
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
                 />
                 <input
                   value={wifiPass}
                   onChange={(e) => setWifiPass(e.target.value)}
-                  placeholder="비밀번호"
+                  placeholder={ui("비밀번호", "Password")}
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
                 />
                 <select
@@ -133,7 +135,7 @@ export default function BarcodeGenTool() {
                 >
                   <option value="WPA">WPA / WPA2 / WPA3</option>
                   <option value="WEP">WEP</option>
-                  <option value="nopass">암호 없음</option>
+                  <option value="nopass">{ui("암호 없음", "No password")}</option>
                 </select>
               </div>
             )}
@@ -148,11 +150,11 @@ export default function BarcodeGenTool() {
                   download="qrcode.png"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium"
                 >
-                  <Download className="w-4 h-4" /> PNG 다운로드
+                  <Download className="w-4 h-4" /> {ui("PNG 다운로드", "Download PNG")}
                 </a>
               </>
             ) : (
-              <div className="text-sm text-slate-400 py-16">내용을 입력하면 QR코드가 생성됩니다.</div>
+              <div className="text-sm text-slate-400 py-16">{ui("내용을 입력하면 QR코드가 생성됩니다.", "Enter text to generate a QR code.")}</div>
             )}
           </div>
         </div>
@@ -162,7 +164,7 @@ export default function BarcodeGenTool() {
             <input
               value={bcValue}
               onChange={(e) => setBcValue(e.target.value)}
-              placeholder="바코드 값 입력"
+              placeholder={ui("바코드 값 입력", "Barcode value")}
               className="sm:col-span-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono"
             />
             <select
@@ -170,9 +172,9 @@ export default function BarcodeGenTool() {
               onChange={(e) => setBcFormat(e.target.value)}
               className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
             >
-              <option value="CODE128">CODE128 (범용)</option>
-              <option value="EAN13">EAN-13 (13자리 숫자)</option>
-              <option value="UPC">UPC (12자리 숫자)</option>
+              <option value="CODE128">{ui("CODE128 (범용)", "CODE128 (general purpose)")}</option>
+              <option value="EAN13">{ui("EAN-13 (13자리 숫자)", "EAN-13 (13 digits)")}</option>
+              <option value="UPC">{ui("UPC (12자리 숫자)", "UPC (12 digits)")}</option>
               <option value="CODE39">CODE39</option>
               <option value="ITF14">ITF-14</option>
             </select>
@@ -188,7 +190,7 @@ export default function BarcodeGenTool() {
                 onClick={downloadBarcodeSvg}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium cursor-pointer"
               >
-                <Download className="w-4 h-4" /> SVG 다운로드
+                <Download className="w-4 h-4" /> {ui("SVG 다운로드", "Download SVG")}
               </button>
             )}
           </div>

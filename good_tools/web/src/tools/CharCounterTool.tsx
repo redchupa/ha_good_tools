@@ -1,7 +1,9 @@
+import { useText } from '../hooks/language';
 import { useMemo, useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
 export default function CharCounterTool() {
+  const ui = useText();
   const [text, setText] = useState('');
 
   const stats = useMemo(() => {
@@ -23,12 +25,12 @@ export default function CharCounterTool() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {[
-          { label: '공백 포함', value: `${stats.withSpaces.toLocaleString()}자` },
-          { label: '공백 제외', value: `${stats.withoutSpaces.toLocaleString()}자` },
-          { label: '단어 수', value: `${stats.words.toLocaleString()}개` },
-          { label: '줄 수', value: `${stats.lines.toLocaleString()}줄` },
+          { label: ui('공백 포함', "With spaces"), value: ui(`${stats.withSpaces.toLocaleString()}자`, `${stats.withSpaces.toLocaleString()} characters`) },
+          { label: ui('공백 제외', "Without spaces"), value: ui(`${stats.withoutSpaces.toLocaleString()}자`, `${stats.withoutSpaces.toLocaleString()} characters`) },
+          { label: ui('단어 수', "Words"), value: ui(`${stats.words.toLocaleString()}개`, `${stats.words.toLocaleString()}`) },
+          { label: ui('줄 수', "Lines"), value: ui(`${stats.lines.toLocaleString()}줄`, `${stats.lines.toLocaleString()}`) },
           { label: 'UTF-8', value: `${stats.utf8Bytes.toLocaleString()} B` },
-          { label: 'EUC-KR(추정)', value: `${stats.euckrBytes.toLocaleString()} B` },
+          { label: ui('EUC-KR(추정)', "EUC-KR (estimate)"), value: `${stats.euckrBytes.toLocaleString()} B` },
         ].map((item) => (
           <div key={item.label} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
             <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.label}</div>
@@ -41,20 +43,20 @@ export default function CharCounterTool() {
         rows={12}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="글자수와 바이트를 계산할 텍스트를 입력하세요..."
+        placeholder={ui("글자수와 바이트를 계산할 텍스트를 입력하세요...", "Enter text to count characters and bytes...")}
         className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:border-indigo-500"
       />
 
       <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>예상 읽기 시간: 약 {stats.readMin}분</span>
+        <span>{ui("예상 읽기 시간: 약", "Estimated reading time: about")} {stats.readMin}{ui("분", " min")}</span>
         <div className="flex gap-2">
-          <CopyButton text={text} label="텍스트 복사" />
+          <CopyButton text={text} label={ui("텍스트 복사", "Copy text")} />
           <button
             type="button"
             onClick={() => setText('')}
             className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            지우기
+            {ui("지우기", "Clear")}
           </button>
         </div>
       </div>

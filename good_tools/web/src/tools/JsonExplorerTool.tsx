@@ -1,3 +1,5 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useMemo, useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { copyToClipboard } from '../components/CopyButton';
@@ -68,6 +70,7 @@ function TreeNode({
 }
 
 export default function JsonExplorerTool() {
+  const ui = useText();
   const [raw, setRaw] = useState(SAMPLE_JSON);
   const [selectedPath, setSelectedPath] = useState('');
 
@@ -75,7 +78,7 @@ export default function JsonExplorerTool() {
     try {
       return { parsed: JSON.parse(raw), error: '' };
     } catch (e) {
-      return { parsed: null, error: e instanceof Error ? e.message : 'JSON 파싱 오류' };
+      return { parsed: null, error: e instanceof Error ? e.message : ui('JSON 파싱 오류', "Invalid JSON") };
     }
   }, [raw]);
 
@@ -88,29 +91,29 @@ export default function JsonExplorerTool() {
     <div className="space-y-4">
       {selectedPath && (
         <div className="px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono text-xs">
-          JSONPath 복사됨: <strong>{selectedPath}</strong>
+          {ui("JSONPath 복사됨:", "Copied JSONPath:")} <strong>{selectedPath}</strong>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <div className="text-xs font-semibold text-slate-500">JSON 입력</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("JSON 입력", "JSON input")}</div>
           <textarea
             rows={16}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs"
           />
-          {error && <div className="text-xs text-rose-500 font-mono">{error}</div>}
+          {error && <div className="text-xs text-rose-500 font-mono"><Diagnostic text={error} /></div>}
         </div>
 
         <div className="space-y-1.5">
-          <div className="text-xs font-semibold text-slate-500">트리 탐색 (노드 클릭 시 JSONPath 복사)</div>
+          <div className="text-xs font-semibold text-slate-500">{ui("트리 탐색 (노드 클릭 시 JSONPath 복사)", "Explore tree (click a node to copy its JSONPath)")}</div>
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 overflow-auto max-h-[380px]">
             {parsed !== null ? (
               <TreeNode name="$" value={parsed} path="$" onPick={handlePick} />
             ) : (
-              <div className="text-xs text-slate-400">올바른 JSON을 입력하면 트리가 표시됩니다.</div>
+              <div className="text-xs text-slate-400">{ui("올바른 JSON을 입력하면 트리가 표시됩니다.", "Enter valid JSON to see the tree.")}</div>
             )}
           </div>
         </div>

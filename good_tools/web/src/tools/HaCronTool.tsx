@@ -1,14 +1,7 @@
+import { Diagnostic } from '../components/Diagnostic';
+import { useText } from '../hooks/language';
 import { useMemo, useState } from 'react';
 import { CopyButton } from '../components/CopyButton';
-
-const PRESETS = [
-  { label: '매 5분마다', expr: '*/5 * * * *' },
-  { label: '매시 정각', expr: '0 * * * *' },
-  { label: '매일 오전 7시', expr: '0 7 * * *' },
-  { label: '평일 오전 8시 30분', expr: '30 8 * * 1-5' },
-  { label: '매주 일요일 자정', expr: '0 0 * * 0' },
-  { label: '매월 1일 오전 9시', expr: '0 9 1 * *' },
-];
 
 function field(expr: string, min: number, max: number) {
   const values = new Set<number>();
@@ -52,6 +45,15 @@ function getNextRuns(expr: string, count: number): { runs: Date[]; error?: strin
 }
 
 export default function HaCronTool() {
+  const ui = useText();
+  const PRESETS = [
+    { label: ui('매 5분마다', "Every 5 minutes"), expr: '*/5 * * * *' },
+    { label: ui('매시 정각', "Every hour"), expr: '0 * * * *' },
+    { label: ui('매일 오전 7시', "Daily at 7 AM"), expr: '0 7 * * *' },
+    { label: ui('평일 오전 8시 30분', "Weekdays at 8:30 AM"), expr: '30 8 * * 1-5' },
+    { label: ui('매주 일요일 자정', "Sunday at midnight"), expr: '0 0 * * 0' },
+    { label: ui('매월 1일 오전 9시', "First of the month at 9 AM"), expr: '0 9 1 * *' },
+  ];
   const [expr, setExpr] = useState('30 8 * * 1-5');
 
   const { runs, error } = useMemo(() => getNextRuns(expr, 5), [expr]);
@@ -88,7 +90,7 @@ export default function HaCronTool() {
       </div>
 
       <div className="grid grid-cols-5 gap-2 text-center text-xs">
-        {['분 (0-59)', '시 (0-23)', '일 (1-31)', '월 (1-12)', '요일 (0=일~6=토)'].map((label, idx) => (
+        {[ui('분 (0-59)', "Minute (0–59)"), ui('시 (0-23)', "Hour (0–23)"), ui('일 (1-31)', "Day (1–31)"), ui('월 (1-12)', "Month (1–12)"), ui('요일 (0=일~6=토)', "Weekday (0=Sun to 6=Sat)")].map((label, idx) => (
           <div key={label} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
             <div className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm">{parts[idx] || '?'}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">{label}</div>
@@ -96,19 +98,19 @@ export default function HaCronTool() {
         ))}
       </div>
 
-      {error && <div className="text-xs text-rose-500">{error}</div>}
+      {error && <div className="text-xs text-rose-500"><Diagnostic text={error} /></div>}
 
       {runs.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-            <div className="text-xs font-semibold text-slate-500">다음 5회 실행 예정 시각</div>
+            <div className="text-xs font-semibold text-slate-500">{ui("다음 5회 실행 예정 시각", "Next five runs")}</div>
             <ul className="space-y-1.5 font-mono text-xs">
               {runs.map((d, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-bold">
                     {i + 1}
                   </span>
-                  <span>{d.toLocaleString('ko-KR', { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{d.toLocaleString(ui('ko-KR', 'en-US'), { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                 </li>
               ))}
             </ul>
@@ -116,10 +118,10 @@ export default function HaCronTool() {
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">HA time_pattern 트리거 참고</span>
+              <span className="text-xs font-semibold text-slate-500">{ui("HA time_pattern 트리거 참고", "HA time_pattern trigger")}</span>
               <CopyButton text={haYaml} />
             </div>
-            {!haYaml && <p>이 일정에는 별도 HA 조건이 필요합니다.</p>}
+            {!haYaml && <p>{ui("이 일정에는 별도 HA 조건이 필요합니다.", "This schedule requires an additional HA condition.")}</p>}
             <pre className="p-3 rounded-lg bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto">{haYaml}</pre>
           </div>
         </div>

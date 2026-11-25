@@ -1,5 +1,6 @@
+import { Diagnostic } from './components/Diagnostic';
 import { Language } from './hooks/language';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useParams, Link } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToolShell } from './components/ToolShell';
@@ -87,9 +88,9 @@ function ToolRoute({
   if (!tool || !Component) {
     return (
       <div className="text-center py-20 space-y-4">
-        <h2 className="text-xl font-bold">도구를 찾을 수 없습니다</h2>
+        <h2 className="text-xl font-bold">{lang === 'en' ? 'Tool not found' : '도구를 찾을 수 없습니다'}</h2>
         <Link to="/" className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium">
-          대시보드로 돌아가기
+          {lang === 'en' ? 'Back to dashboard' : '대시보드로 돌아가기'}
         </Link>
       </div>
     );
@@ -101,8 +102,8 @@ function ToolRoute({
       isFavorite={favorites.includes(tool.id)}
       onToggleFavorite={() => toggleFavorite(tool.id)}
     >
-      <ErrorBoundary resetKey={tool.id}>
-        <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">도구를 불러오는 중...</div>}>
+      <ErrorBoundary lang={lang} resetKey={tool.id}>
+        <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">{lang === 'en' ? 'Loading tool...' : '도구를 불러오는 중...'}</div>}>
           <Component />
         </Suspense>
       </ErrorBoundary>
@@ -114,6 +115,7 @@ export default function App() {
   const { theme, setTheme } = useTheme();
   const { favorites, toggleFavorite, hiddenTools, toggleHidden, lang, setLang, syncError, dismissSyncError } = useSyncedPrefs();
 
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   return (
     <Language.Provider value={lang}><Layout
       theme={theme}
@@ -155,7 +157,7 @@ export default function App() {
     </Layout>
     {syncError && (
       <div role="alert" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-50 flex items-start gap-3 p-3 rounded-xl bg-rose-600 text-white text-xs shadow-lg">
-        <span className="flex-1">{syncError}</span>
+        <span className="flex-1"><Diagnostic text={syncError} /></span>
         <button type="button" onClick={dismissSyncError} className="font-semibold cursor-pointer">{lang === 'en' ? 'Close' : '닫기'}</button>
       </div>
     )}

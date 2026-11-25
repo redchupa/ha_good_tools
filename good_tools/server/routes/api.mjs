@@ -74,7 +74,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.5.1' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.0' }) {
   const router = express.Router();
   const feedsFile = path.join(dataDir, 'feeds.json');
   const clipboardFile = path.join(dataDir, 'clipboard.json');

@@ -1,3 +1,4 @@
+import { useText } from '../hooks/language';
 import { useState, useRef } from 'react';
 import { CopyButton } from '../components/CopyButton';
 
@@ -56,6 +57,7 @@ function renderBanner(text: string, fillChar: string): string {
 }
 
 export default function AsciiArtTool() {
+  const ui = useText();
   const [mode, setMode] = useState<'text' | 'image'>('text');
   const [text, setText] = useState('HA TOOLS');
   const [fillChar, setFillChar] = useState('█');
@@ -112,7 +114,7 @@ export default function AsciiArtTool() {
               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
           }`}
         >
-          텍스트 배너
+          {ui("텍스트 배너", "Text banner")}
         </button>
         <button
           type="button"
@@ -123,7 +125,7 @@ export default function AsciiArtTool() {
               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
           }`}
         >
-          이미지 → ASCII 아트
+          {ui("이미지 → ASCII 아트", "Image to ASCII art")}
         </button>
       </div>
 
@@ -132,11 +134,11 @@ export default function AsciiArtTool() {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="영문/숫자 입력 (예: HELLO 2026)"
+            placeholder={ui("영문/숫자 입력 (예: HELLO 2026)", "Enter letters or numbers (e.g. HELLO 2026)")}
             className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm outline-none focus:border-indigo-500"
           />
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-500">채움 문자:</span>
+            <span className="text-slate-500">{ui("채움 문자:", "Fill character:")}</span>
             {['█', '#', '@', '*', '■'].map((ch) => (
               <button
                 key={ch}
@@ -163,7 +165,7 @@ export default function AsciiArtTool() {
             className="text-sm"
           />
           <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-            너비({cols}자):
+            {ui("너비(", "Width (")}{cols}{ui("자):", " characters):")}
             <input
               type="range"
               min={30}
@@ -174,17 +176,17 @@ export default function AsciiArtTool() {
           </label>
           <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
             <input type="checkbox" checked={invert} onChange={(e) => setInvert(e.target.checked)} />
-            명암 반전
+            {ui("명암 반전", "Invert brightness")}
           </label>
         </div>
       )}
 
       <div className="flex justify-end">
-        <CopyButton text={activeResult} label="ASCII 복사" />
+        <CopyButton text={activeResult} label={ui("ASCII 복사", "Copy ASCII")} />
       </div>
 
       <pre className="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] sm:text-xs overflow-x-auto leading-tight min-h-[160px]">
-        {activeResult || '이미지를 선택하거나 텍스트를 입력하면 여기에 표시됩니다.'}
+        {activeResult || ui('이미지를 선택하거나 텍스트를 입력하면 여기에 표시됩니다.', "Choose an image or enter text to see the result.")}
       </pre>
     </div>
   );
