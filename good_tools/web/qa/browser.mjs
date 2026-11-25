@@ -135,6 +135,13 @@ try {
   }
   assert.deepEqual(automaticLookups, [], 'Opening tools must not trigger upstream lookups');
   console.log('PASS: opened ' + ids.length + ' tools in English');
+  await open('ip-info');
+  await page.getByText('Public IP details are cached', { exact: false }).waitFor();
+  await page.route('**/api/ipinfo', route => route.fulfill({
+    status: 429, headers: { 'Retry-After': '37' }, json: {}
+  }));
+  await page.getByRole('button', { name: 'Look up public IP' }).click();
+  await page.getByRole('alert').getByText('Lookups are temporarily limited. Try again in 37 seconds.').waitFor();
   await open('unit-date-calc');
   await page.getByText('Everyday unit conversions').waitFor();
   await page.getByTitle('Switch language (English / Korean)').click();

@@ -16,7 +16,7 @@ export function createApp(options = {}) {
   const allowLanTools =
     options.allowLanTools ?? (process.env.ALLOW_LAN_TOOLS === 'true');
   const defaultTheme = options.defaultTheme || process.env.DEFAULT_THEME || 'system';
-  const appVersion = options.appVersion || process.env.APP_VERSION || '1.6.1';
+  const appVersion = options.appVersion || process.env.APP_VERSION || '1.6.2';
 
   const app = express();
   app.disable('x-powered-by');

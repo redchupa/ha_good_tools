@@ -49,7 +49,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.1' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.2' }) {
   const router = express.Router();
   const outbound = createOutboundPolicy();
   const ipLookup = cachedLookup(15 * 60000);
