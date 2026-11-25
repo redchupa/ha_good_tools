@@ -85,3 +85,9 @@ PDF 합치기나 사진 용량 줄이기, QR코드 만들기, 글자수 세기 �
   <a href="https://github.com/sponsors/redchupa"><img src="https://img.shields.io/badge/GitHub_Sponsors-❤️-pink?style=for-the-badge&logo=githubsponsors" alt="GitHub Sponsors"></a>
   <a href="https://www.paypal.com/ncp/payment/HG9KNC262PLAC"><img src="https://img.shields.io/badge/PayPal-후원-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
 </p>
+
+---
+
+## 라이선스 (License)
+
+[MIT License](LICENSE)
