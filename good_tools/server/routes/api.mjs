@@ -49,7 +49,7 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.2' }) {
+export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.3' }) {
   const router = express.Router();
   const outbound = createOutboundPolicy();
   const ipLookup = cachedLookup(15 * 60000);
@@ -329,24 +329,27 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
       return res.status(400).json({ error: '올바른 도메인 형식이 아닙니다.' });
     }
 
-    const records = await outbound.run(cleanDomain, async () => {
+    const { records, failedTypes } = await outbound.run(cleanDomain, async () => {
       const resolver = new Resolver({ timeout: 1500, tries: 1 });
       const result = {};
+      const failedTypes = [];
       const deadline = Date.now() + 8000;
       const timer = setTimeout(() => resolver.cancel(), 8000);
       try {
         for (const type of ['A', 'AAAA', 'MX', 'TXT', 'CNAME', 'NS']) {
           result[type] = [];
-          if (Date.now() >= deadline) continue;
+          if (Date.now() >= deadline) { failedTypes.push(type); continue; }
           try {
             const rows = await resolver.resolve(cleanDomain, type);
             result[type] = type === 'TXT' ? rows.map(chunks => chunks.join('')) : rows;
-          } catch { /* Some domains do not publish every record type. */ }
+          } catch (err) {
+            if (!['ENODATA', 'ENOTFOUND'].includes(err.code)) failedTypes.push(type);
+          }
         }
-        return result;
+        return { records: result, failedTypes };
       } finally { clearTimeout(timer); }
     });
-    res.json({ domain: cleanDomain, records });
+    res.json({ domain: cleanDomain, records, failedTypes });
   }));
 
   // 4. Remote HTML Source Viewer (htmlViewer)

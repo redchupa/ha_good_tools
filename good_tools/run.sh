@@ -17,7 +17,7 @@ export LOG_LEVEL="${LOG_LEVEL}"
 export ALLOW_NETWORK_TOOLS="${ALLOW_NETWORK_TOOLS}"
 export ALLOW_LAN_TOOLS="${ALLOW_LAN_TOOLS}"
 export DEFAULT_THEME="${DEFAULT_THEME}"
-export APP_VERSION="1.6.2"
+export APP_VERSION="1.6.3"
 
 bashio::log.info "Starting Good Tools v${APP_VERSION}..."
 bashio::log.info "  Log level: ${LOG_LEVEL}"

@@ -1,3 +1,4 @@
+import { OutboundBusy } from './outbound.mjs';
 import dns from 'node:dns/promises';
 import dgram from 'node:dgram';
 import net from 'node:net';
@@ -157,6 +158,7 @@ export async function inspectSsl(rawHost, port, outbound, userAgent) {
   // Also inspect HTTP security headers
   let securityHeaders = {};
   let httpStatus = null;
+  let headerRetryAfter = null;
   try {
     const resp = await outbound.run(cleanHost, async observe => {
       const response = await requestPublic(target, {
@@ -178,9 +180,9 @@ export async function inspectSsl(rawHost, port, outbound, userAgent) {
     ]) {
       securityHeaders[h] = resp.headers.get(h) || null;
     }
-  } catch {
-    // HEAD optional
+  } catch (err) {
+    if (err instanceof OutboundBusy) headerRetryAfter = err.seconds;
   }
 
-  return { ...certInfo, httpStatus, securityHeaders };
+  return { ...certInfo, httpStatus, securityHeaders, headerRetryAfter };
 }

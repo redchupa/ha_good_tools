@@ -39,6 +39,7 @@ export default function IpInfoTool() {
   const lookupDns = async (e: React.FormEvent) => {
     e.preventDefault();
     setDnsErr('');
+    setDnsRes(null);
     setLoadingDns(true);
     try {
       const r = await fetch('./api/dns', {
@@ -129,6 +130,7 @@ export default function IpInfoTool() {
           </button>
         </form>
         {dnsErr && <div className="text-xs text-rose-500"><Diagnostic text={dnsErr} /></div>}
+        {dnsRes && <p className="text-sm font-semibold">{dnsRes.domain}</p>}
         {dnsRes && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {Object.entries(dnsRes.records).map(([type, vals]: [string, any]) => (
@@ -141,7 +143,7 @@ export default function IpInfoTool() {
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-slate-400">{ui("레코드 없음", "No records")}</span>
+                  <span className="text-slate-400">{dnsRes.failedTypes?.includes(type) ? ui("조회 실패 · 잠시 후 다시 시도해 주세요.", "Lookup failed. Try again shortly.") : ui("레코드 없음", "No records")}</span>
                 )}
               </div>
             ))}
