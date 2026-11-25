@@ -143,7 +143,7 @@ export default function IpInfoTool() {
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-slate-400">{dnsRes.failedTypes?.includes(type) ? ui("조회 실패 · 잠시 후 다시 시도해 주세요.", "Lookup failed. Try again shortly.") : ui("레코드 없음", "No records")}</span>
+                  <span className={dnsRes.failedTypes?.includes(type) ? "text-amber-600 dark:text-amber-400" : "text-slate-400"}>{dnsRes.failedTypes?.includes(type) ? ui("조회 실패 · 잠시 후 다시 시도해 주세요.", "Lookup failed. Try again shortly.") : ui("레코드 없음", "No records")}</span>
                 )}
               </div>
             ))}

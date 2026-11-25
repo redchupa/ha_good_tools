@@ -97,7 +97,7 @@ export default function SslCheckerTool() {
 
           <div className="space-y-1.5">
             <div className="text-xs font-semibold text-slate-500">{ui("HTTP 보안 헤더", "HTTP security headers")}</div>
-            {result.httpStatus == null && <p role="status" className="text-xs">
+            {result.httpStatus == null && <p role="status" className="text-xs text-amber-600 dark:text-amber-400">
               {result.headerRetryAfter
                 ? ui(`헤더 조회가 제한되었습니다. ${result.headerRetryAfter}초 후 다시 시도해 주세요.`, `Header lookup is limited. Try again in ${result.headerRetryAfter} seconds.`)
                 : ui('보안 헤더를 조회하지 못했습니다.', 'Could not retrieve security headers.')}

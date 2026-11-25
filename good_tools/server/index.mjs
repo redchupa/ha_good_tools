@@ -36,7 +36,15 @@ export function createApp(options = {}) {
   });
 
   app.use('/api/ha', haRouter());
-  app.use('/api', createApiRouter({ dataDir, allowNetworkTools, allowLanTools, defaultTheme, appVersion }));
+  app.use('/api', createApiRouter({
+    dataDir,
+    allowNetworkTools,
+    allowLanTools,
+    defaultTheme,
+    appVersion,
+    createDnsResolver: options.createDnsResolver,
+    outbound: options.outbound,
+  }));
 
   // Serve static SPA assets (never cache index.html so HA app updates appear immediately)
   if (fs.existsSync(publicDir)) {

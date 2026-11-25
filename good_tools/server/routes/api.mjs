@@ -49,9 +49,17 @@ function publicLink(value, base) {
 
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanTools = false, defaultTheme = 'system', appVersion = '1.6.3' }) {
+export function createApiRouter({
+  dataDir,
+  allowNetworkTools = true,
+  allowLanTools = false,
+  defaultTheme = 'system',
+  appVersion = '1.6.3',
+  createDnsResolver = () => new Resolver({ timeout: 1500, tries: 1 }),
+  outbound: customOutbound,
+}) {
   const router = express.Router();
-  const outbound = createOutboundPolicy();
+  const outbound = customOutbound || createOutboundPolicy();
   const ipLookup = cachedLookup(15 * 60000);
   const feedLookups = new Map(DEFAULT_FEEDS.map(feed => [feed.url, cachedLookup(10 * 60000)]));
   const rateLookup = cachedLookup(6 * 3600000);
@@ -330,7 +338,7 @@ export function createApiRouter({ dataDir, allowNetworkTools = true, allowLanToo
     }
 
     const { records, failedTypes } = await outbound.run(cleanDomain, async () => {
-      const resolver = new Resolver({ timeout: 1500, tries: 1 });
+      const resolver = createDnsResolver();
       const result = {};
       const failedTypes = [];
       const deadline = Date.now() + 8000;
