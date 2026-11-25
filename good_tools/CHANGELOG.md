@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.2
+
+- 외부 조회 화면에 대기 이유와 재시도 시간, 저장된 결과의 사용 기간을 표시합니다.
+- External lookup tools explain delays, retry intervals and cache lifetimes.
+
 ## 1.6.1
 
 - RSS, 공인 IP와 우편번호는 사용자가 조회할 때 연결합니다. 서버는 외부 요청 간격과 동시 연결을 제한하고 429·503 응답의 Retry-After를 존중합니다.

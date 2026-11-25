@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
@@ -46,6 +47,7 @@ export default function RssReaderTool() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: targetUrl.trim() }),
       });
+      checkLookupLimit(res, ui);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || ui('피드 조회 실패', "Could not load the feed."));
       setFeedData(data);
@@ -104,6 +106,7 @@ export default function RssReaderTool() {
         ))}
       </div>
 
+      <LookupNotice pending={loading} cache={ui("기본 피드는 최대 10분 동안 저장된 결과를 사용합니다.", "Built-in feeds are cached for up to 10 minutes.")} />
       {/* Fetch & Save form */}
       <div className="flex flex-wrap gap-2">
         <input

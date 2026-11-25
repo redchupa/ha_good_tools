@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { useText } from '../hooks/language';
 import { useEffect, useState } from 'react';
 import { ArrowLeftRight, RotateCcw, Edit3 } from 'lucide-react';
@@ -55,6 +56,7 @@ export default function CurrencyCalcTool() {
     setLoading(true);
     try {
       const r = await fetch('./api/exchange-rates');
+      checkLookupLimit(r, ui);
       if (!r.ok) throw Error();
       const feed = await r.json();
       const values: Record<string,number> = {};
@@ -74,7 +76,7 @@ export default function CurrencyCalcTool() {
       setStatus(missing.length
         ? ui(`${total - missing.length}/${total}개 갱신 (${feed.date}) · ${missing.join('·')}는 출처에 없어 직접 입력해 주세요 / ${missing.join(', ')} not in the feed`, `Updated ${total - missing.length}/${total} (${feed.date}). Enter rates for ${missing.join(", ")} manually.`)
         : ui(`${total}개 모두 갱신 (${feed.date}) / All updated`, `Updated all ${total} rates (${feed.date})`));
-    } catch { setStatus(ui('갱신 실패 · 저장된 환율 사용 / Using cached rates', "Refresh failed. Using cached rates.")); }
+    } catch (err) { setStatus(err instanceof Error && err.message ? err.message : ui('갱신 실패 · 저장된 환율 사용 / Using cached rates', "Refresh failed. Using cached rates.")); }
     finally { setLoading(false); }
   };
   const edit = (code:string, value:string) => {
@@ -148,6 +150,7 @@ export default function CurrencyCalcTool() {
         </div>
       </div>
 
+      <LookupNotice pending={loading} cache={ui("환율은 최대 6시간 동안 저장된 값을 사용합니다.", "Rates are cached for up to 6 hours.")} />
       <div className="flex flex-wrap gap-3 text-sm"><button disabled={loading} onClick={refresh}>{ui("기준 환율 갱신 / Refresh", "Refresh rates")}</button>
         <span>{fromCode} · {describe(fromCode)} / {toCode} · {describe(toCode)}</span><span role="status">{status}</span></div>
       {/* Main 1:1 Converter */}

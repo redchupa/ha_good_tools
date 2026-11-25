@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { useState } from 'react';
@@ -22,6 +23,7 @@ export default function SslCheckerTool() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: host.trim(), port: 443 }),
       });
+      checkLookupLimit(r, ui);
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || ui('진단 실패', "Check failed"));
       setResult(d);
@@ -34,6 +36,7 @@ export default function SslCheckerTool() {
 
   return (
     <div className="space-y-4">
+      <LookupNotice pending={loading} />
       <form onSubmit={inspect} className="flex gap-2">
         <input
           value={host}

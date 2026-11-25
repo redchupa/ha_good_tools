@@ -1,3 +1,4 @@
+import { LookupNotice, checkLookupLimit } from '../components/LookupNotice';
 import { Diagnostic } from '../components/Diagnostic';
 import { useText } from '../hooks/language';
 import { previewDocument } from '../utils/preview';
@@ -28,6 +29,7 @@ export default function HtmlViewerTool() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       });
+      checkLookupLimit(res, ui);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || ui('가져오기 실패', "Fetch failed"));
       setRemote(data);
@@ -63,6 +65,7 @@ export default function HtmlViewerTool() {
 
       {tab === 'remote' ? (
         <div className="space-y-4">
+          <LookupNotice pending={loading} />
           <form onSubmit={fetchRemote} className="flex gap-2">
             <input
               value={url}
