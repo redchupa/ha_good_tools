@@ -4,6 +4,13 @@ import { engToKor, korToEng } from './engKor';
 import { parseSmi, parseSrtOrVtt, cuesToSrt, cuesToVtt, shiftCues } from './subtitle';
 import { crc32, calculateSubnet, generateUuidV4, generateUuidV7, generateUlid, generateNanoId } from './helpers';
 import { TOOLS } from '../data/tools';
+import {
+  LANGUAGE_OPTIONS,
+  SHELL_STRINGS,
+  isValidLang,
+  getToolName,
+  translatePhrase,
+} from '../data/locales';
 
 describe('Tools registry', () => {
   it('registers all modernized tools with unique IDs', () => {
@@ -82,4 +89,31 @@ describe('CSV import', () => {
 it('rejects fractional prefixes and missing IPv4 octets', () => {
   expect(() => calculateSubnet('192..1.1', 24)).toThrow();
   expect(() => calculateSubnet('192.168.1.1', 24.5)).toThrow();
+});
+
+describe('multi-language locales', () => {
+  it('provides 10 valid language options with complete shell strings', () => {
+    expect(LANGUAGE_OPTIONS).toHaveLength(10);
+    for (const opt of LANGUAGE_OPTIONS) {
+      expect(isValidLang(opt.code)).toBe(true);
+      const s = SHELL_STRINGS[opt.code];
+      expect(s.dashboard.length).toBeGreaterThan(0);
+      expect(s.chooseLanguage.length).toBeGreaterThan(0);
+      expect(Object.keys(s.categories)).toEqual(['ha', 'general', 'developer', 'feed', 'games']);
+    }
+    expect(isValidLang('xx')).toBe(false);
+  });
+
+  it('localizes tool names and common phrases across languages', () => {
+    const tool = TOOLS.find((t) => t.id === 'uuid-gen')!;
+    expect(tool).toBeDefined();
+    expect(getToolName(tool, 'ko')).toBe(tool.name);
+    expect(getToolName(tool, 'en')).toBe(tool.nameEn);
+    expect(getToolName(tool, 'ja')).toContain('UUID');
+    expect(translatePhrase('ko', '복사', 'Copy')).toBe('복사');
+    expect(translatePhrase('en', '복사', 'Copy')).toBe('Copy');
+    expect(translatePhrase('ja', '복사', 'Copy')).toBe('コピー');
+    expect(translatePhrase('es', '복사', 'Copy')).toBe('Copiar');
+    expect(translatePhrase('fr', '존재하지않는문구', 'Fallback text')).toBe('Fallback text');
+  });
 });

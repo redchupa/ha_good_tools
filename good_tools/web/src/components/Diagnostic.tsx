@@ -60,8 +60,11 @@ const messages: Record<string, string> = {
   "서버 요청 처리 중 오류가 발생했습니다.": "The server could not process the request.",
 };
 
-export function diagnosticText(text: string, lang: 'ko' | 'en') {
-  if (lang === 'en' && Object.hasOwn(messages, text)) return messages[text];
+import type { LangMode } from '../data/locales';
+
+export function diagnosticText(text: string, lang: LangMode) {
+  const nonKo = lang !== 'ko';
+  if (nonKo && Object.hasOwn(messages, text)) return messages[text];
   // Older workers and HA servers send both languages in one diagnostic.
   const split = text.lastIndexOf(' / ');
   if (split >= 0) {
@@ -71,7 +74,7 @@ export function diagnosticText(text: string, lang: 'ko' | 'en') {
       return korean.test(first) === (lang === 'ko') ? first : second;
     }
   }
-  if (lang === 'en') return text
+  if (nonKo) return text
     .replace(/^피드 서버 응답 오류 /, 'Feed server error ')
     .replace(/^도메인 DNS 조회에 실패했습니다: /, 'DNS lookup failed for ')
     .replace(/^도메인 주소를 확인할 수 없습니다: /, 'Could not resolve ')

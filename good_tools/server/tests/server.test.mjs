@@ -238,6 +238,26 @@ describe('API routes', () => {
     assert.equal(merged.rev, 4);
   });
 
+  it('persists supported multi-language codes and ignores invalid ones', async () => {
+    await fs.writeFile(path.join(tempDir, 'prefs.json'), '{}');
+    for (const code of ['ja', 'zh', 'zh-TW', 'es', 'de', 'fr', 'pt', 'vi', 'ko', 'en']) {
+      const res = await fetch(baseUrl + '/api/prefs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang: code }),
+      });
+      assert.equal(res.status, 200);
+      const data = await res.json();
+      assert.equal(data.lang, code);
+    }
+    const invalid = await fetch(baseUrl + '/api/prefs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang: 'xx-invalid' }),
+    }).then(r => r.json());
+    assert.equal(invalid.lang, 'en');
+  });
+
   it('keeps LAN checks away from the Supervisor network', () => {
     assert.equal(isLanAddress('192.168.1.20'), true);
     assert.equal(isLanAddress('172.30.32.2'), false);

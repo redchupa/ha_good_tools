@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { prefsStore } from './prefsStore';
+import type { LangMode } from '../data/locales';
+export type { LangMode };
 
 export type ThemeMode =
   | 'system'
@@ -54,8 +56,6 @@ export const THEME_OPTIONS: ThemeOption[] = [
 
 const DARK_THEMES = new Set<ThemeMode>(['dark', 'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot']);
 const VALID_THEMES = new Set<string>(THEME_OPTIONS.map((t) => t.id));
-
-export type LangMode = 'ko' | 'en';
 
 function usePrefsState() {
   return useSyncExternalStore(prefsStore.subscribe, prefsStore.getState);

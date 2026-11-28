@@ -1,8 +1,10 @@
+import { isValidLang, type LangMode } from '../data/locales';
+
 // One preferences store for the whole page. Changes are sent as {add, remove}
 // operations so that two devices editing at the same time both keep their change.
 export type ListChange = { add?: string[]; remove?: string[] };
-export interface Prefs { favorites: string[]; hiddenTools: string[]; lang: 'ko' | 'en'; theme: string }
-export interface PrefsChange { favorites?: ListChange; hiddenTools?: ListChange; lang?: 'ko' | 'en'; theme?: string }
+export interface Prefs { favorites: string[]; hiddenTools: string[]; lang: LangMode; theme: string }
+export interface PrefsChange { favorites?: ListChange; hiddenTools?: ListChange; lang?: LangMode; theme?: string }
 export interface PrefsState extends Prefs { loaded: boolean; syncError: string }
 
 const KEYS = { favorites: 'good_tools_favorites', hiddenTools: 'good_tools_hidden', lang: 'good_tools_lang', theme: 'good_tools_theme' } as const;
@@ -45,17 +47,18 @@ function fromServer(data: unknown, fallback: Prefs): Prefs {
   return {
     favorites: Array.isArray(d.favorites) ? d.favorites : fallback.favorites,
     hiddenTools: Array.isArray(d.hiddenTools) ? d.hiddenTools : fallback.hiddenTools,
-    lang: d.lang === 'en' || d.lang === 'ko' ? d.lang : fallback.lang,
+    lang: isValidLang(d.lang) ? d.lang : fallback.lang,
     theme: typeof d.theme === 'string' && d.theme ? d.theme : fallback.theme,
   };
 }
 
 type Fetch = typeof fetch;
 export function createPrefsStore(request: Fetch = (...args) => fetch(...args)) {
+  const savedLang = readText(KEYS.lang);
   let state: PrefsState = {
     favorites: readList(KEYS.favorites),
     hiddenTools: readList(KEYS.hiddenTools),
-    lang: readText(KEYS.lang) === 'en' ? 'en' : 'ko',
+    lang: isValidLang(savedLang) ? savedLang : 'ko',
     theme: readText(KEYS.theme) || 'system',
     loaded: false,
     syncError: '',
