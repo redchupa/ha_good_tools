@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+- 주요 국가 언어 선택 메뉴를 추가했습니다. 상단 언어 버튼을 눌러 한국어, English, 日本語, 中文 (简体), 繁體中文, Español, Deutsch, Français, Português, Tiếng Việt 중 원하는 언어를 고를 수 있으며, 선택한 언어는 HA 설정(`/data/prefs.json`)에 자동 저장됩니다.
+- Added a language selector dropdown supporting 10 major languages (Korean, English, Japanese, Simplified Chinese, Traditional Chinese, Spanish, German, French, Portuguese, and Vietnamese) with automatic sync to HA preferences.
+
 ## 1.6.3
 
 - DNS 조회 실패와 빈 레코드를 구분하고 결과에 조회한 도메인을 표시합니다. SSL 보안 헤더 조회가 제한되면 재시도 시간을 안내합니다.

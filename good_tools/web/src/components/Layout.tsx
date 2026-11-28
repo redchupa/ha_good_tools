@@ -15,7 +15,14 @@ import {
   Languages,
   Check,
 } from 'lucide-react';
-import { TOOLS, CATEGORY_LABELS, type ToolCategory } from '../data/tools';
+import { TOOLS, type ToolCategory } from '../data/tools';
+import {
+  LANGUAGE_OPTIONS,
+  SHELL_STRINGS,
+  getLanguageOption,
+  getToolDesc,
+  getToolName,
+} from '../data/locales';
 import { ToolIcon } from './ToolIcon';
 import { THEME_OPTIONS, type ThemeMode, type LangMode } from '../hooks/usePreferences';
 
@@ -44,6 +51,7 @@ export function Layout({
   const [searchOpen, setSearchOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [query, setQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,6 +66,7 @@ export function Layout({
         setSearchOpen(false);
         setManageOpen(false);
         setThemeOpen(false);
+        setLangOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -72,18 +81,21 @@ export function Layout({
         return (
           t.name.toLowerCase().includes(q) ||
           (t.nameEn || '').toLowerCase().includes(q) ||
+          getToolName(t, lang).toLowerCase().includes(q) ||
           t.shortDesc.toLowerCase().includes(q) ||
-          t.shortDescEn?.toLowerCase().includes(q) ||
+          (t.shortDescEn || '').toLowerCase().includes(q) ||
           t.keywords.some((k) => k.toLowerCase().includes(q))
         );
       })
     : TOOLS;
 
   const currentThemeOpt = THEME_OPTIONS.find((t) => t.id === theme) || THEME_OPTIONS[0];
+  const currentLangOpt = getLanguageOption(lang);
+  const s = SHELL_STRINGS[lang];
 
   const categories: ToolCategory[] = ['ha', 'general', 'developer', 'feed', 'games'];
-  const tName = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.nameEn ? t.nameEn : t.name);
-  const tDesc = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.shortDescEn ? t.shortDescEn : t.shortDesc);
+  const tName = (t: (typeof TOOLS)[number]) => getToolName(t, lang);
+  const tDesc = (t: (typeof TOOLS)[number]) => getToolDesc(t, lang);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -101,7 +113,7 @@ export function Layout({
         <button
           onClick={() => setSidebarOpen(false)}
           className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-          aria-label={lang === 'en' ? 'Close menu' : '메뉴 닫기'}
+          aria-label={s.closeMenu}
         >
           <X className="w-5 h-5" />
         </button>
@@ -119,7 +131,7 @@ export function Layout({
             }`}
           >
             <Home className="w-4 h-4" />
-            <span>{lang === 'en' ? 'Dashboard' : '전체 도구 대시보드'}</span>
+            <span>{s.dashboard}</span>
             <span className="ml-auto text-xs px-1.5 py-0.5 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
               {visibleTools.length}
             </span>
@@ -130,7 +142,7 @@ export function Layout({
           <div>
             <div className="px-3 mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
               <Star className="w-3 h-3 fill-current" />
-              {lang === 'en' ? 'Favorites' : '즐겨찾기'}
+              {s.favorites}
             </div>
             <div className="space-y-0.5">
               {favorites
@@ -164,7 +176,7 @@ export function Layout({
           return (
             <div key={cat}>
               <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                {lang === 'en' ? CATEGORY_LABELS[cat].labelEn : CATEGORY_LABELS[cat].label}
+                {s.categories[cat]}
               </div>
               <div className="space-y-0.5">
                 {catTools.map((tool) => {
@@ -221,7 +233,7 @@ export function Layout({
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-            aria-label={lang === 'en' ? 'Open menu' : '메뉴 열기'}
+            aria-label={s.openMenu}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -235,7 +247,7 @@ export function Layout({
             className="flex-1 max-w-md flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 text-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors cursor-pointer"
           >
             <Search className="w-4 h-4 shrink-0" />
-            <span className="truncate">{lang === 'en' ? 'Quick search tools...' : '도구 빠르게 찾기...'}</span>
+            <span className="truncate">{s.quickSearch}</span>
             <kbd className="ml-auto hidden sm:inline-block px-1.5 py-0.5 text-[11px] font-mono rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300">
               Ctrl K
             </kbd>
@@ -245,28 +257,86 @@ export function Layout({
             <button
               type="button"
               onClick={() => setManageOpen(true)}
-              title={lang === 'en' ? 'Manage visible tools' : '도구 표시/숨기기 관리'}
+              title={s.manageTitle}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{lang === 'en' ? 'Manage' : '도구 관리'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')}
-              title={lang === 'en' ? 'Switch language (English / Korean)' : '언어 전환 (한국어 / English)'}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>{lang === 'ko' ? 'KO' : 'EN'}</span>
+              <span className="hidden md:inline">{s.manage}</span>
             </button>
 
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setThemeOpen((o) => !o)}
-                title={lang === 'en' ? 'Choose theme' : '테마 선택'}
+                onClick={() => {
+                  setThemeOpen(false);
+                  setLangOpen((o) => !o);
+                }}
+                title={s.chooseLanguage}
+                aria-label={s.chooseLanguage}
+                aria-expanded={langOpen}
+                aria-haspopup="listbox"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
+              >
+                <Languages className="w-3.5 h-3.5 opacity-80" />
+                <span aria-hidden="true">{currentLangOpt.flag}</span>
+                <span>{currentLangOpt.short}</span>
+              </button>
+
+              {langOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setLangOpen(false)} />
+                  <div
+                    role="listbox"
+                    aria-label={s.chooseLanguage}
+                    className="absolute right-0 mt-2 w-52 max-h-[75vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5 z-40 space-y-0.5"
+                  >
+                    <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      {s.chooseLanguage}
+                    </div>
+                    {LANGUAGE_OPTIONS.map((opt) => {
+                      const active = opt.code === lang;
+                      return (
+                        <button
+                          key={opt.code}
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          onClick={() => {
+                            setLang(opt.code);
+                            setLangOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                            active
+                              ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold'
+                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm leading-none shrink-0" aria-hidden="true">
+                              {opt.flag}
+                            </span>
+                            <span className="truncate">{opt.nativeName}</span>
+                          </span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            <span className="text-[10px] font-mono opacity-60">{opt.short}</span>
+                            {active && <Check className="w-3.5 h-3.5" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setLangOpen(false);
+                  setThemeOpen((o) => !o);
+                }}
+                title={s.chooseTheme}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
               >
                 <span
@@ -275,7 +345,7 @@ export function Layout({
                 />
                 <Palette className="w-3.5 h-3.5 hidden sm:inline opacity-70" />
                 <span className="hidden sm:inline">
-                  {lang === 'en' ? currentThemeOpt.labelEn : currentThemeOpt.label}
+                  {lang === 'ko' ? currentThemeOpt.label : currentThemeOpt.labelEn}
                 </span>
               </button>
 
@@ -285,9 +355,9 @@ export function Layout({
                   <div className="absolute right-0 mt-2 w-60 max-h-[75vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-40 space-y-2">
                     {(
                       [
-                        ['basic', lang === 'en' ? 'Basic' : '기본'],
-                        ['cute', lang === 'en' ? 'Cute & Pretty' : '귀엽고 예쁜 테마'],
-                        ['futuristic', lang === 'en' ? 'Futuristic · Robot · Dark' : '미래 · 로봇 · 감성 다크'],
+                        ['basic', s.themeBasic],
+                        ['cute', s.themeCute],
+                        ['futuristic', s.themeFuturistic],
                       ] as const
                     ).map(([groupKey, groupTitle]) => (
                       <div key={groupKey}>
@@ -315,7 +385,7 @@ export function Layout({
                                   className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 shrink-0"
                                   style={{ background: opt.swatch }}
                                 />
-                                <span>{lang === 'en' ? opt.labelEn : opt.label}</span>
+                                <span>{lang === 'ko' ? opt.label : opt.labelEn}</span>
                               </span>
                               {active && <Check className="w-3.5 h-3.5" />}
                             </button>
@@ -349,7 +419,7 @@ export function Layout({
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={lang === 'en' ? 'Search tools (pdf, yaml, cron, qr...)' : '도구 이름, 기능, 키워드로 검색 (예: pdf, yaml, 크론, qr)...'}
+                placeholder={s.quickSearchPlaceholder}
                 className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
               />
               <button onClick={() => setSearchOpen(false)} className="text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
@@ -358,7 +428,7 @@ export function Layout({
             </div>
             <div className="max-h-80 overflow-y-auto p-2 space-y-0.5">
               {filteredTools.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400">{lang === 'en' ? 'No matching tools.' : '일치하는 도구가 없습니다.'}</div>
+                <div className="py-8 text-center text-sm text-slate-400">{s.noMatches}</div>
               ) : (
                 filteredTools.map((tool) => (
                   <button
@@ -397,12 +467,8 @@ export function Layout({
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <h2 className="font-bold text-base">{lang === 'en' ? 'Manage Visible Tools' : '도구 표시 / 숨기기 관리'}</h2>
-                <p className="text-xs text-slate-500">
-                  {lang === 'en'
-                    ? 'Synced to HA /data/prefs.json across PC and mobile.'
-                    : '설정은 HA /data/prefs.json에 자동 동기화되어 PC와 모바일에 함께 적용됩니다.'}
-                </p>
+                <h2 className="font-bold text-base">{s.manageTitle}</h2>
+                <p className="text-xs text-slate-500">{s.manageDesc}</p>
               </div>
               <button onClick={() => setManageOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
                 <X className="w-4 h-4" />

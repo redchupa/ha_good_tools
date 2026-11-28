@@ -3,9 +3,9 @@ import { toolAvailability, useEnvironment } from '../utils/capabilities';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Star, Wifi, ShieldAlert, Radio } from 'lucide-react';
-import { TOOLS, CATEGORY_LABELS, type ToolCategory } from '../data/tools';
+import { TOOLS, type ToolCategory } from '../data/tools';
+import { getToolDesc, getToolName, SHELL_STRINGS, type LangMode } from '../data/locales';
 import { ToolIcon } from '../components/ToolIcon';
-import type { LangMode } from '../hooks/usePreferences';
 
 interface HomePageProps {
   favorites: string[];
@@ -39,8 +39,9 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
     .map((id) => TOOLS.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
-  const tName = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.nameEn ? t.nameEn : t.name);
-  const tDesc = (t: (typeof TOOLS)[number]) => (lang === 'en' && t.shortDescEn ? t.shortDescEn : t.shortDesc);
+  const s = SHELL_STRINGS[lang];
+  const tName = (t: (typeof TOOLS)[number]) => getToolName(t, lang);
+  const tDesc = (t: (typeof TOOLS)[number]) => getToolDesc(t, lang);
 
   return (
     <div className="space-y-6">
@@ -50,7 +51,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
             Good Tools
           </h1>
           <p className="mt-1.5 text-sm sm:text-base text-white/85">
-            {lang === 'en' ? 'Useful Tools Collection' : '좋은 도구 모음'}
+            {s.subtitle}
           </p>
 
           <div className="mt-5 relative max-w-lg">
@@ -58,11 +59,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                lang === 'en'
-                  ? 'Search tools (pdf, yaml, cron, qr, clipboard, ssl)...'
-                  : '도구 검색 (예: 클립보드, PDF, YAML, 크론, 이미지, 바코드, RSS)...'
-              }
+              placeholder={s.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 text-sm shadow-sm outline-none focus:ring-2 focus:ring-white/60"
             />
           </div>
@@ -71,7 +68,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
 
       {recent.length > 0 && !search && category === 'all' && (
         <section className="space-y-2">
-          <h2 className="font-semibold">{lang === 'en' ? 'Recently used' : '최근 사용한 도구'}</h2>
+          <h2 className="font-semibold">{s.recent}</h2>
           <div className="flex flex-wrap gap-2">{recent.map(t =>
             <Link key={t.id} to={'/tool/' + t.id} className="rounded-lg border px-3 py-2 text-sm">{tName(t)}</Link>
           )}</div>
@@ -81,7 +78,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
             <Star className="w-4 h-4 text-amber-500 fill-current" />
-            {lang === 'en' ? 'Favorites' : '즐겨찾는 도구'}
+            {s.favorites}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {favoriteTools.map((tool) => (
@@ -108,14 +105,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
       <div className="flex items-center gap-2 flex-wrap">
         {(['all', 'ha', 'general', 'developer', 'feed', 'games'] as const).map((cat) => {
           const count = cat === 'all' ? visibleBase.length : visibleBase.filter((t) => t.category === cat).length;
-          const label =
-            cat === 'all'
-              ? lang === 'en'
-                ? 'All'
-                : '전체'
-              : lang === 'en'
-              ? CATEGORY_LABELS[cat].labelEn
-              : CATEGORY_LABELS[cat].label;
+          const label = cat === 'all' ? s.all : s.categories[cat];
           const active = category === cat;
           return (
             <button
@@ -136,7 +126,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500">
-          {lang === 'en' ? 'No matching tools found.' : '검색 결과가 없습니다. 다른 키워드를 입력해 보세요.'}
+          {s.noResults}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -170,11 +160,11 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                       </h3>
                       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
                         <span className="whitespace-nowrap text-[11px] text-slate-400">
-                          {lang === 'en' ? CATEGORY_LABELS[tool.category].labelEn : CATEGORY_LABELS[tool.category].label}
+                          {s.categories[tool.category]}
                         </span>
                         {tool.badge === 'network' && (
                           <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-[10px] px-1.5 rounded bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
-                            <Wifi className="w-2.5 h-2.5" /> {lang === 'en' ? 'Server' : '서버'}
+                            <Wifi className="w-2.5 h-2.5" /> {s.server}
                           </span>
                         )}
                         {tool.badge === 'lan' && (
@@ -191,11 +181,11 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                           const avail = toolAvailability(tool.id, env);
                           if (avail.level === 'ok') return null;
                           return (
-                            <span title={lang === 'en' ? avail.en : avail.ko}
+                            <span title={lang === 'ko' ? avail.ko : avail.en}
                               className={`whitespace-nowrap text-[10px] px-1.5 rounded ${avail.level === 'blocked'
                                 ? 'bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300'}`}>
-                              {avail.level === 'blocked' ? (lang === 'en' ? 'Unavailable here' : '지금 사용 불가') : (lang === 'en' ? 'Limited' : '일부 제한')}
+                              {avail.level === 'blocked' ? s.unavailableHere : s.limited}
                             </span>
                           );
                         })()}
@@ -208,7 +198,7 @@ export function HomePage({ favorites, toggleFavorite, hiddenTools, lang }: HomeP
                     className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                       isFav ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
                     }`}
-                    title={lang === 'en' ? (isFav ? 'Remove favorite' : 'Add favorite') : (isFav ? '즐겨찾기 해제' : '즐겨찾기 추가')}
+                    title={isFav ? s.removeFavorite : s.addFavorite}
                   >
                     <Star className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
                   </button>

@@ -7,6 +7,7 @@ import { ToolShell } from './components/ToolShell';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { HomePage } from './pages/HomePage';
 import { getToolById } from './data/tools';
+import { SHELL_STRINGS, type LangMode } from './data/locales';
 import { useTheme, useSyncedPrefs } from './hooks/usePreferences';
 
 const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
@@ -77,20 +78,21 @@ function ToolRoute({
   favorites,
   toggleFavorite,
 }: {
-  lang: 'ko' | 'en';
+  lang: LangMode;
   favorites: string[];
   toggleFavorite: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const tool = id ? getToolById(id) : undefined;
   const Component = id ? TOOL_COMPONENTS[id] : undefined;
+  const s = SHELL_STRINGS[lang];
 
   if (!tool || !Component) {
     return (
       <div className="text-center py-20 space-y-4">
-        <h2 className="text-xl font-bold">{lang === 'en' ? 'Tool not found' : '도구를 찾을 수 없습니다'}</h2>
+        <h2 className="text-xl font-bold">{s.toolNotFound}</h2>
         <Link to="/" className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium">
-          {lang === 'en' ? 'Back to dashboard' : '대시보드로 돌아가기'}
+          {s.backToDashboard}
         </Link>
       </div>
     );
@@ -103,7 +105,7 @@ function ToolRoute({
       onToggleFavorite={() => toggleFavorite(tool.id)}
     >
       <ErrorBoundary lang={lang} resetKey={tool.id}>
-        <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">{lang === 'en' ? 'Loading tool...' : '도구를 불러오는 중...'}</div>}>
+        <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400 animate-pulse">{s.loadingTool}</div>}>
           <Component />
         </Suspense>
       </ErrorBoundary>

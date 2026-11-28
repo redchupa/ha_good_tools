@@ -54,7 +54,7 @@ export function createApiRouter({
   allowNetworkTools = true,
   allowLanTools = false,
   defaultTheme = 'system',
-  appVersion = '1.6.3',
+  appVersion = '1.7.0',
   createDnsResolver = () => new Resolver({ timeout: 1500, tries: 1 }),
   outbound: customOutbound,
 }) {
@@ -489,6 +489,8 @@ export function createApiRouter({
     'ocean', 'forest', 'rose-dark', 'aurora', 'cyberpunk', 'mecha-bot',
   ]);
 
+  const VALID_LANGS = new Set(['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'de', 'fr', 'pt', 'vi']);
+
   const toolIds = value => Array.isArray(value)
     ? [...new Set(value.filter(x => typeof x === 'string' && x.length <= 64))].slice(0, 100)
     : [];
@@ -496,7 +498,7 @@ export function createApiRouter({
     return {
       favorites: toolIds(prefs.favorites),
       hiddenTools: toolIds(prefs.hiddenTools),
-      lang: prefs.lang === 'en' ? 'en' : 'ko',
+      lang: VALID_LANGS.has(prefs.lang) ? prefs.lang : 'ko',
       theme: VALID_THEMES.has(prefs.theme) ? prefs.theme : defaultTheme,
       rev: Number.isInteger(prefs.rev) && prefs.rev >= 0 ? prefs.rev : 0,
     };
@@ -522,7 +524,7 @@ export function createApiRouter({
       return {
         favorites: Array.isArray(favorites) ? toolIds(favorites) : current.favorites,
         hiddenTools: Array.isArray(hiddenTools) ? toolIds(hiddenTools) : current.hiddenTools,
-        lang: lang === 'en' || lang === 'ko' ? lang : current.lang,
+        lang: VALID_LANGS.has(lang) ? lang : current.lang,
         theme: VALID_THEMES.has(theme) ? theme : current.theme,
         rev: current.rev + 1,
       };
@@ -537,7 +539,7 @@ export function createApiRouter({
       return {
         favorites: applyListChange(current.favorites, favorites, true),
         hiddenTools: applyListChange(current.hiddenTools, hiddenTools, false),
-        lang: lang === 'en' || lang === 'ko' ? lang : current.lang,
+        lang: VALID_LANGS.has(lang) ? lang : current.lang,
         theme: VALID_THEMES.has(theme) ? theme : current.theme,
         rev: current.rev + 1,
       };
